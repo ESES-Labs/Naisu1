@@ -1,0 +1,25 @@
+[package]
+name = "naisu-api"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "naisu-api"
+path = "src/main.rs"
+
+[dependencies]
+naisu-core = { workspace = true }
+naisu-bridge = { workspace = true }
+naisu-agent = { workspace = true }
+naisu-sui = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+dotenvy = { workspace = true }
+uuid = { workspace = true }

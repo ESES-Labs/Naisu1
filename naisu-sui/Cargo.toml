@@ -1,0 +1,17 @@
+[package]
+name = "naisu-sui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+naisu-core = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+reqwest = { workspace = true }
+
+# Note: sui-sdk has heavy dependencies, using REST API for MVP
+# Uncomment when needed:
+# sui-sdk = { workspace = true }
