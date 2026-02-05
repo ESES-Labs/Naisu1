@@ -12,8 +12,18 @@
 //!         ↓
 //! Winner fills via PTB
 //! ```
+//!
+//! # Network Support
+//! - Testnet: Native Staking, DeepBook
+//! - Mainnet: Cetus, Scallop, Navi, Native Staking, DeepBook
 
 pub mod bots;
+pub mod config;
+pub mod executor;
 pub mod solver;
+pub mod solver_factory;
 
+pub use config::{Network, Protocol, ProtocolConfig};
+pub use executor::{SuiCoin, SuiExecutor, TransactionResult};
 pub use solver::{Bid, Solver, SolverConfig};
+pub use solver_factory::{MultiNetworkSolver, SolverFactory};
