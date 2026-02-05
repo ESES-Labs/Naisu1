@@ -4,7 +4,6 @@ members = [
     "naisu-sui",
     "naisu-agent",
     "naisu-api",
-    "solver-sdk",
 ]
 resolver = "2"
 
