@@ -1,6 +1,6 @@
 //! API Feature Modules
 
 pub mod health;
-
-// TODO: Add new intent API for competitive solver model
-// pub mod intents;
+pub mod network;
+pub mod solver;
+pub mod strategy;

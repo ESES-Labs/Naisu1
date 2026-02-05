@@ -1,0 +1,12 @@
+[package]
+name = "naisu"
+edition = "2024.beta"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet" }
+
+[addresses]
+naisu = "0x891304702aa2fc599ce1eaf84d8cb192a393479b28cda1ebed93db8226a71da1"
+
+[package]
+published-at = "0x891304702aa2fc599ce1eaf84d8cb192a393479b28cda1ebed93db8226a71da1"
