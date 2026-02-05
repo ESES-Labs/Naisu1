@@ -7,7 +7,7 @@ use tracing::{error, info};
 pub async fn create_dual_stack_listener(port: u16) -> std::io::Result<TcpListener> {
     // Try to bind to IPv4 and IPv6
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    
+
     match TcpListener::bind(addr).await {
         Ok(listener) => {
             info!("✅ Server listening on {}", addr);

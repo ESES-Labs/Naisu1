@@ -25,7 +25,9 @@ impl SuiConfig {
             scallop_package: None,
             navi_package: None,
             // Testnet USDC (example - actual address may differ)
-            usdc_coin_type: "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN".to_string(),
+            usdc_coin_type:
+                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"
+                    .to_string(),
         }
     }
 
@@ -36,7 +38,9 @@ impl SuiConfig {
             private_key: None,
             scallop_package: Some("0x...".to_string()), // Actual Scallop package
             navi_package: Some("0x...".to_string()),    // Actual Navi package
-            usdc_coin_type: "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN".to_string(),
+            usdc_coin_type:
+                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"
+                    .to_string(),
         }
     }
 

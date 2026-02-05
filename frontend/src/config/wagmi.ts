@@ -1,14 +1,14 @@
 import { createConfig, http } from 'wagmi'
 import { base, baseSepolia, mainnet, sepolia, arbitrum } from 'wagmi/chains'
-import { injected, walletConnect } from 'wagmi/connectors'
-
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || ''
+import { injected } from 'wagmi/connectors'
 
 export const wagmiConfig = createConfig({
   chains: [baseSepolia, base, sepolia, mainnet, arbitrum],
+  multiInjectedProviderDiscovery: true, // Enable EIP-6963 for multiple wallets
   connectors: [
+    // Generic injected - will detect all browser wallets via EIP-6963
+    // This will auto-detect MetaMask, Rabby, Coinbase Wallet extension, etc.
     injected(),
-    walletConnect({ projectId }),
   ],
   transports: {
     [baseSepolia.id]: http(),

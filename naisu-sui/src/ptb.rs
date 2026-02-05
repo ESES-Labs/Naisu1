@@ -69,11 +69,19 @@ pub struct PtbBuilder {
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum PtbInput {
     /// Object reference
-    Object { object_id: String, version: u64, digest: String },
+    Object {
+        object_id: String,
+        version: u64,
+        digest: String,
+    },
     /// Pure value (serialized)
     Pure { value: Vec<u8> },
     /// Shared object
-    SharedObject { object_id: String, initial_shared_version: u64, mutable: bool },
+    SharedObject {
+        object_id: String,
+        initial_shared_version: u64,
+        mutable: bool,
+    },
 }
 
 impl PtbBuilder {
@@ -104,7 +112,12 @@ impl PtbBuilder {
     }
 
     /// Add a shared object input
-    pub fn add_shared_object(&mut self, object_id: &str, initial_version: u64, mutable: bool) -> PtbArgument {
+    pub fn add_shared_object(
+        &mut self,
+        object_id: &str,
+        initial_version: u64,
+        mutable: bool,
+    ) -> PtbArgument {
         self.add_input(PtbInput::SharedObject {
             object_id: object_id.to_string(),
             initial_shared_version: initial_version,
@@ -134,28 +147,28 @@ impl PtbBuilder {
 
     /// Add a transfer objects command
     pub fn transfer_objects(&mut self, objects: Vec<PtbArgument>, address: PtbArgument) {
-        self.commands.push(PtbCommand::TransferObjects(TransferObjectsCommand {
-            objects,
-            address,
-        }));
+        self.commands
+            .push(PtbCommand::TransferObjects(TransferObjectsCommand {
+                objects,
+                address,
+            }));
     }
 
     /// Add a split coins command
     pub fn split_coins(&mut self, coin: PtbArgument, amounts: Vec<PtbArgument>) -> PtbArgument {
         let index = self.commands.len() as u16;
-        self.commands.push(PtbCommand::SplitCoins(SplitCoinsCommand {
-            coin,
-            amounts,
-        }));
+        self.commands
+            .push(PtbCommand::SplitCoins(SplitCoinsCommand { coin, amounts }));
         PtbArgument::Result { index }
     }
 
     /// Add a merge coins command
     pub fn merge_coins(&mut self, destination: PtbArgument, sources: Vec<PtbArgument>) {
-        self.commands.push(PtbCommand::MergeCoins(MergeCoinsCommand {
-            destination,
-            sources,
-        }));
+        self.commands
+            .push(PtbCommand::MergeCoins(MergeCoinsCommand {
+                destination,
+                sources,
+            }));
     }
 
     /// Build the PTB

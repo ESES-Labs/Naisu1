@@ -1,46 +1,35 @@
-//! Naisu Agent - Cross-chain intent orchestrator
+//! Naisu Solver Bot Runner
 //!
-//! Listens for IntentCreated events from V4 Hook (EVM→Sui)
-//! and coordinates Sui→EVM intents from the API.
+//! Run multiple solver bots that compete to fulfill yield intents.
 
-use naisu_evm::HookEventListener;
-use naisu_sui::SuiClient;
-use tracing::{info, error, Level};
-use tracing_subscriber::FmtSubscriber;
-
-use naisu_agent::{AgentConfig, IntentOrchestrator};
+use naisu_agent::bots::{NaviSolver, ScallopSolver};
+use naisu_agent::solver::Solver;
+use tracing::info;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    dotenvy::dotenv().ok();
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt::init();
 
-    let _subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .with_target(true)
-        .init();
+    info!("🤖 Starting Naisu Solver Bots...");
 
-    info!("Starting Naisu Agent...");
+    // Initialize solvers
+    let scallop = ScallopSolver::new();
+    let navi = NaviSolver::new();
 
-    let config = AgentConfig::from_env()?;
-    info!("Loaded config: chain_id={}", config.evm.chain.chain_id());
+    info!("✅ Loaded solvers:");
+    info!("   - {}", scallop.name());
+    info!("   - {}", navi.name());
 
-    let sui_client = SuiClient::new(config.sui.clone());
-    let orchestrator = IntentOrchestrator::new(config.clone(), sui_client);
+    // TODO: Start solver event loops
+    // 1. Poll for new YieldIntent shared objects
+    // 2. Evaluate and bid
+    // 3. Race to fulfill
 
-    // Start EVM event listener (EvmToSui intents)
-    let evm_listener = HookEventListener::new(config.evm.clone());
-    let mut event_rx = evm_listener.start().await?;
-    info!("Listening for IntentCreated events...");
+    info!("⏳ Solver bots ready (implementation in progress)");
 
-    // Process Hook events
-    while let Some(event) = event_rx.recv().await {
-        info!("Received IntentCreated: {}", event.intent_id);
-
-        match orchestrator.process_evm_to_sui(event).await {
-            Ok(intent) => info!("Intent {} → {}", intent.id, intent.status.as_str()),
-            Err(e) => error!("Failed to process intent: {}", e),
-        }
-    }
+    // Keep alive
+    tokio::signal::ctrl_c().await?;
+    info!("👋 Shutting down solver bots");
 
     Ok(())
 }

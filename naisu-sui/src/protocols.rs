@@ -1,7 +1,7 @@
 //! Sui DeFi protocol integrations (Scallop, Navi)
 
+use crate::ptb::{PtbArgument, PtbBuilder};
 use naisu_core::YieldStrategy;
-use crate::ptb::{PtbBuilder, PtbArgument};
 
 /// Scallop protocol integration
 pub struct ScallopProtocol {
@@ -11,7 +11,10 @@ pub struct ScallopProtocol {
 
 impl ScallopProtocol {
     pub fn new(package_id: String, market_id: String) -> Self {
-        Self { package_id, market_id }
+        Self {
+            package_id,
+            market_id,
+        }
     }
 
     /// Build PTB commands for depositing USDC into Scallop
@@ -28,7 +31,8 @@ impl ScallopProtocol {
             "deposit",
             vec![
                 // USDC type argument
-                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN".to_string(),
+                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"
+                    .to_string(),
             ],
             vec![market, usdc_coin],
         )
@@ -46,7 +50,8 @@ impl ScallopProtocol {
             "lending",
             "withdraw",
             vec![
-                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN".to_string(),
+                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"
+                    .to_string(),
             ],
             vec![market, amount],
         )
@@ -61,7 +66,10 @@ pub struct NaviProtocol {
 
 impl NaviProtocol {
     pub fn new(package_id: String, pool_id: String) -> Self {
-        Self { package_id, pool_id }
+        Self {
+            package_id,
+            pool_id,
+        }
     }
 
     /// Build PTB commands for depositing USDC into Navi
@@ -76,7 +84,8 @@ impl NaviProtocol {
             "pool",
             "deposit",
             vec![
-                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN".to_string(),
+                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"
+                    .to_string(),
             ],
             vec![pool, usdc_coin],
         )
@@ -94,7 +103,8 @@ impl NaviProtocol {
             "pool",
             "withdraw",
             vec![
-                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN".to_string(),
+                "0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN"
+                    .to_string(),
             ],
             vec![pool, amount],
         )
@@ -116,8 +126,14 @@ impl ProtocolFactory {
         match strategy {
             YieldStrategy::ScallopUsdc => {
                 let scallop = ScallopProtocol::new(
-                    protocol_config.scallop_package.clone().ok_or(ProtocolError::NotConfigured("Scallop"))?,
-                    protocol_config.scallop_market.clone().ok_or(ProtocolError::NotConfigured("Scallop market"))?,
+                    protocol_config
+                        .scallop_package
+                        .clone()
+                        .ok_or(ProtocolError::NotConfigured("Scallop"))?,
+                    protocol_config
+                        .scallop_market
+                        .clone()
+                        .ok_or(ProtocolError::NotConfigured("Scallop market"))?,
                 );
                 let market = ptb.add_shared_object(
                     &protocol_config.scallop_market.clone().unwrap(),
@@ -128,20 +144,25 @@ impl ProtocolFactory {
             }
             YieldStrategy::NaviUsdc => {
                 let navi = NaviProtocol::new(
-                    protocol_config.navi_package.clone().ok_or(ProtocolError::NotConfigured("Navi"))?,
-                    protocol_config.navi_pool.clone().ok_or(ProtocolError::NotConfigured("Navi pool"))?,
+                    protocol_config
+                        .navi_package
+                        .clone()
+                        .ok_or(ProtocolError::NotConfigured("Navi"))?,
+                    protocol_config
+                        .navi_pool
+                        .clone()
+                        .ok_or(ProtocolError::NotConfigured("Navi pool"))?,
                 );
-                let pool = ptb.add_shared_object(
-                    &protocol_config.navi_pool.clone().unwrap(),
-                    1,
-                    true,
-                );
+                let pool =
+                    ptb.add_shared_object(&protocol_config.navi_pool.clone().unwrap(), 1, true);
                 navi.build_deposit_usdc(&mut ptb, usdc_coin, pool);
             }
             YieldStrategy::ScallopSui | YieldStrategy::NaviSui => {
                 // For SUI strategies, need to swap USDC -> SUI first
                 // This would involve DeepBook integration
-                return Err(ProtocolError::NotImplemented("SUI deposit strategies require swap"));
+                return Err(ProtocolError::NotImplemented(
+                    "SUI deposit strategies require swap",
+                ));
             }
             YieldStrategy::Custom(_) => {
                 return Err(ProtocolError::NotImplemented("Custom strategies"));

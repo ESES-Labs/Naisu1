@@ -7,8 +7,7 @@ use tracing_subscriber::{
 
 /// Setup the logging subscriber with JSON or pretty format based on environment
 pub fn setup_subscriber() -> impl SubscriberInitExt {
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     let fmt_layer = fmt::layer()
         .with_target(true)
@@ -23,8 +22,7 @@ pub fn setup_subscriber() -> impl SubscriberInitExt {
 
 /// Setup JSON logging for production environments
 pub fn setup_json_subscriber() -> impl SubscriberInitExt {
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     let fmt_layer = fmt::layer()
         .json()

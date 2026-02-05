@@ -76,9 +76,7 @@ impl SuiClient {
         coin_type: Option<&str>,
     ) -> Result<Vec<CoinObject>, SuiClientError> {
         let params = serde_json::json!([
-            owner,
-            coin_type,
-            null, // cursor
+            owner, coin_type, null, // cursor
             null  // limit
         ]);
 
@@ -88,8 +86,13 @@ impl SuiClient {
 
     /// Get USDC balance for an address
     pub async fn get_usdc_balance(&self, owner: &str) -> Result<u64, SuiClientError> {
-        let coins = self.get_coins(owner, Some(&self.config.usdc_coin_type)).await?;
-        let total: u64 = coins.iter().map(|c| c.balance.parse::<u64>().unwrap_or(0)).sum();
+        let coins = self
+            .get_coins(owner, Some(&self.config.usdc_coin_type))
+            .await?;
+        let total: u64 = coins
+            .iter()
+            .map(|c| c.balance.parse::<u64>().unwrap_or(0))
+            .sum();
         Ok(total)
     }
 
@@ -105,7 +108,9 @@ impl SuiClient {
         ]);
 
         let response: ObjectResponse = self.rpc_call("sui_getObject", params).await?;
-        response.data.ok_or(SuiClientError::ObjectNotFound(object_id.to_string()))
+        response
+            .data
+            .ok_or(SuiClientError::ObjectNotFound(object_id.to_string()))
     }
 
     /// Execute a transaction

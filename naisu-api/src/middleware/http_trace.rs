@@ -1,8 +1,4 @@
-use axum::{
-    extract::Request,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, middleware::Next, response::Response};
 use std::time::Instant;
 use tracing::{info, warn};
 
@@ -14,8 +10,7 @@ pub async fn http_trace_middleware(request: Request, next: Next) -> Response {
     let path = request.uri().path().to_string();
     let request_id = uuid::Uuid::new_v4().to_string();
 
-    tracing::Span::current()
-        .record("request_id", &request_id.as_str());
+    tracing::Span::current().record("request_id", request_id.as_str());
 
     info!(
         request_id = %request_id,

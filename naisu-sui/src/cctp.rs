@@ -9,11 +9,11 @@ use serde::{Deserialize, Serialize};
 // Source: https://github.com/circlefin/sui-cctp (testnet branch Move.lock)
 
 /// TokenMessengerMinter package on Sui Testnet
-pub const TOKEN_MESSENGER_MINTER_PACKAGE: &str = 
+pub const TOKEN_MESSENGER_MINTER_PACKAGE: &str =
     "0x31cc14d80c175ae39777c0238f20594c6d4869cfab199f40b69f3319956b8beb";
 
 /// USDC coin type on Sui Testnet
-pub const USDC_COIN_TYPE: &str = 
+pub const USDC_COIN_TYPE: &str =
     "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC";
 
 /// MessageTransmitter package on Sui Testnet  
@@ -78,19 +78,19 @@ pub struct BurnResult {
 // ─── PTB Builder ─────────────────────────────────────────────────────────────
 
 /// Build a Programmable Transaction Block for deposit_for_burn
-/// 
+///
 /// This constructs the Move call to `token_messenger_minter::deposit_for_burn`
 /// which burns USDC on Sui and initiates the CCTP transfer.
 pub fn build_deposit_for_burn_ptb(
     request: &DepositForBurnRequest,
-    usdc_coin_object_id: &str,
+    _usdc_coin_object_id: &str,
 ) -> Result<DepositForBurnResponse, CctpSuiError> {
     // The actual PTB construction requires the Sui SDK's TransactionBlock builder
     // For now, we return the parameters needed for the frontend to build it
-    
+
     // Pad EVM address to 32 bytes (required by CCTP)
-    let padded_dest = pad_evm_address(&request.evm_destination)?;
-    
+    let _padded_dest = pad_evm_address(&request.evm_destination)?;
+
     let summary = format!(
         "Burn {} USDC on Sui → Mint on Base (domain {})",
         request.amount as f64 / 1_000_000.0,
@@ -103,7 +103,7 @@ pub fn build_deposit_for_burn_ptb(
     //    - SplitCoins to get exact amount
     //    - MoveCall to token_messenger_minter::deposit_for_burn::deposit_for_burn
     // 3. Serialize to base64
-    
+
     // For MVP, return placeholder - frontend will build the actual PTB
     Ok(DepositForBurnResponse {
         tx_bytes: "PLACEHOLDER_FRONTEND_BUILDS_PTB".to_string(),
@@ -120,7 +120,9 @@ pub fn extract_nonce_from_events(events: &[serde_json::Value]) -> Option<String>
             if event_type.contains("DepositForBurn") {
                 if let Some(parsed) = event.get("parsedJson") {
                     if let Some(nonce) = parsed.get("nonce") {
-                        return nonce.as_str().map(|s| s.to_string())
+                        return nonce
+                            .as_str()
+                            .map(|s| s.to_string())
                             .or_else(|| nonce.as_u64().map(|n| n.to_string()));
                     }
                 }
@@ -146,13 +148,13 @@ fn pad_evm_address(addr: &str) -> Result<String, CctpSuiError> {
 pub enum CctpSuiError {
     #[error("Invalid EVM address: {0}")]
     InvalidAddress(String),
-    
+
     #[error("Failed to build PTB: {0}")]
     PtbBuildError(String),
-    
+
     #[error("Coin not found: {0}")]
     CoinNotFound(String),
-    
+
     #[error("Insufficient balance")]
     InsufficientBalance,
 }
@@ -165,7 +167,10 @@ mod tests {
     fn test_pad_evm_address() {
         let addr = "0x1234567890123456789012345678901234567890";
         let padded = pad_evm_address(addr).unwrap();
-        assert_eq!(padded, "0x0000000000000000000000001234567890123456789012345678901234567890");
+        assert_eq!(
+            padded,
+            "0x0000000000000000000000001234567890123456789012345678901234567890"
+        );
         assert_eq!(padded.len(), 66); // 0x + 64 hex chars
     }
 }

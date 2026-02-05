@@ -1,19 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { IntentForm } from '@/components/IntentForm'
-import { ProgressTracker } from '@/components/ProgressTracker'
+import { IntentForm, YieldIntentForm, ProgressTracker } from '@/features/intent'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Zap, Shield, Globe, TrendingUp, Activity, Bot, Coins } from 'lucide-react'
-import { AIChat } from '@/components/AIChat'
-import { SuiBridge } from '@/components/SuiBridge'
+import { Zap, Shield, Globe, TrendingUp, Activity, Bot, Coins, Sprout } from 'lucide-react'
+import { AIChat } from '@/features/ai'
+import { SuiBridge } from '@/features/bridge'
 
-export const Route = createFileRoute('/')({
-  component: HomePage,
-} as any)
-
-function HomePage() {
+// Export component for lazy loading
+export function HomePage() {
   const [activeIntentId, setActiveIntentId] = useState<string | null>(null)
-  const [mode, setMode] = useState<'manual' | 'ai' | 'bridge'>('manual')
+  const [mode, setMode] = useState<'manual' | 'yield' | 'bridge' | 'ai'>('manual')
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -61,9 +57,10 @@ function HomePage() {
       {/* Mode Switcher */}
       <div className="flex justify-center mb-10">
         <div className="bg-white/[0.05] p-1 rounded-xl border border-white/[0.05] flex gap-1">
-          <ModeButton active={mode === 'manual'} onClick={() => setMode('manual')} icon={Zap}>Intent</ModeButton>
+          <ModeButton active={mode === 'manual'} onClick={() => setMode('manual')} icon={Zap}>Cross-Chain</ModeButton>
+          <ModeButton active={mode === 'yield'} onClick={() => setMode('yield')} icon={Sprout}>Sui Yield</ModeButton>
           <ModeButton active={mode === 'bridge'} onClick={() => setMode('bridge')} icon={Coins}>Bridge</ModeButton>
-          <ModeButton active={mode === 'ai'} onClick={() => setMode('ai')} icon={Bot}>AI Agent</ModeButton>
+          <ModeButton active={mode === 'ai'} onClick={() => setMode('ai')} icon={Bot}>AI</ModeButton>
         </div>
       </div>
 
@@ -74,6 +71,11 @@ function HomePage() {
             {mode === 'manual' && (
               <motion.div key="manual" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="w-full max-w-lg">
                 <IntentForm onIntentCreated={setActiveIntentId} />
+              </motion.div>
+            )}
+            {mode === 'yield' && (
+              <motion.div key="yield" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="w-full max-w-lg">
+                <YieldIntentForm onIntentCreated={setActiveIntentId} />
               </motion.div>
             )}
             {mode === 'bridge' && (
@@ -129,6 +131,10 @@ function HomePage() {
     </div>
   )
 }
+
+export const Route = createFileRoute('/')({
+  component: HomePage,
+} as any)
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 

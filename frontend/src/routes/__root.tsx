@@ -1,13 +1,23 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { WalletConnect } from '@/components/WalletConnect'
-import { motion } from 'framer-motion'
-import { Sparkles } from 'lucide-react'
+/**
+ * Root Route
+ *
+ * Layout wrapper for all routes
+ */
 
-function RootLayout() {
+import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
+import { WalletConnect } from '@/features/wallet';
+
+export const Route = createRootRoute({
+  component: RootComponent,
+});
+
+function RootComponent() {
   return (
     <div className="min-h-screen bg-[#0a0e1a] relative overflow-hidden">
-      {/* Gradient Orbs (maneki / justbeep style) */}
+      {/* Gradient Orbs */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-32 left-[20%] w-[550px] h-[550px] bg-indigo-600 rounded-full opacity-[0.07] blur-[140px]" />
         <div className="absolute top-[40%] -right-24 w-[420px] h-[420px] bg-cyan-500 rounded-full opacity-[0.05] blur-[120px]" />
@@ -60,9 +70,5 @@ function RootLayout() {
 
       {import.meta.env.DEV && <TanStackRouterDevtools />}
     </div>
-  )
+  );
 }
-
-export const Route = createRootRoute({
-  component: RootLayout,
-})

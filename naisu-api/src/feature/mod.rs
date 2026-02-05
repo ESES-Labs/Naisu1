@@ -1,7 +1,6 @@
-pub mod ai;
-pub mod bridge;
-pub mod chains;
+//! API Feature Modules
+
 pub mod health;
-pub mod intent;
-pub mod quotes;
-pub mod strategies;
+
+// TODO: Add new intent API for competitive solver model
+// pub mod intents;

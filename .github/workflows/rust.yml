@@ -1,22 +1,166 @@
-  name: Rust
-  
-  on:
-    push:
-      branches: [ "main" ]
-    pull_request:
-      branches: [ "main" ]
-  
-  env:
-    CARGO_TERM_COLOR: always
-  
-  jobs:
-    build:
-  
-      runs-on: ubuntu-latest
-  
-      steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        run: cargo build --verbose
+name: Rust CI
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # 1️⃣ Formatting check (fastest ~5s)
+  fmt:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+  # 2️⃣ Quick compilation check (~30s)
+  check:
+    name: Check Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-check-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check code
+        run: cargo check --all-features --verbose
+
+  # 3️⃣ Lint with clippy (~1min)
+  clippy:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    needs: [fmt, check]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-clippy-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Lint code
+        run: cargo clippy --all-features -- -D warnings
+
+  # 4️⃣ Run tests (~30s)
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: [fmt, check]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-test-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --all-features --verbose
+
+  # 5️⃣ Full build (slowest ~2-3min) - runs last!
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [fmt, check, clippy, test]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-build-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build all crates
+        run: cargo build --all-features --verbose
+
+      - name: Build release
+        run: cargo build --release --all-features --verbose

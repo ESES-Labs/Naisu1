@@ -1,8 +1,6 @@
 [workspace]
 members = [
     "naisu-core",
-    "naisu-evm",
-    "naisu-bridge",
     "naisu-sui",
     "naisu-agent",
     "naisu-api",
@@ -10,7 +8,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/user/naisu1"
@@ -67,7 +65,5 @@ hex = "0.4"
 
 # Internal crates
 naisu-core = { path = "naisu-core" }
-naisu-evm = { path = "naisu-evm" }
-naisu-bridge = { path = "naisu-bridge" }
 naisu-sui = { path = "naisu-sui" }
 naisu-agent = { path = "naisu-agent" }

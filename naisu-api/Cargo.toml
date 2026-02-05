@@ -9,7 +9,6 @@ path = "src/main.rs"
 
 [dependencies]
 naisu-core = { workspace = true }
-naisu-bridge = { workspace = true }
 naisu-agent = { workspace = true }
 naisu-sui = { workspace = true }
 tokio = { workspace = true }

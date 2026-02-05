@@ -1,10 +1,7 @@
 use std::sync::Arc;
 
 use axum::extract::FromRef;
-use naisu_agent::AgentConfig;
-use naisu_agent::IntentOrchestrator;
 use naisu_core::{Intent, IntentStatus};
-use naisu_sui::SuiClient;
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 
@@ -15,27 +12,17 @@ use crate::config::Config;
 pub struct AppState {
     pub config: Arc<Config>,
     pub intents: Arc<RwLock<HashMap<String, Intent>>>,
-    pub orchestrator: Arc<IntentOrchestrator>,
+    // TODO: Re-add orchestrator when solver architecture is rebuilt
+    // pub orchestrator: Arc<IntentOrchestrator>,
 }
 
 impl AppState {
     pub fn new() -> Self {
         let config = Arc::new(Config::from_env());
-        
-        // Initialize agent config from env
-        let agent_config = AgentConfig::from_env()
-            .expect("Failed to load agent config");
-        
-        let sui_client = SuiClient::new(agent_config.sui.clone());
-        let orchestrator = Arc::new(IntentOrchestrator::new(
-            agent_config.clone(),
-            sui_client,
-        ));
 
         Self {
             config,
             intents: Arc::new(RwLock::new(HashMap::new())),
-            orchestrator,
         }
     }
 

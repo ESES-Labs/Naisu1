@@ -9,8 +9,6 @@ path = "src/main.rs"
 
 [dependencies]
 naisu-core = { workspace = true }
-naisu-evm = { workspace = true }
-naisu-bridge = { workspace = true }
 naisu-sui = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
@@ -19,3 +17,4 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 dotenvy = { workspace = true }
+async-trait = "0.1"

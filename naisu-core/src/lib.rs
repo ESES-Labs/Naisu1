@@ -5,12 +5,12 @@
 //! - Chain: Supported blockchain networks
 //! - Strategy: Yield strategies on destination chain (Sui)
 
-pub mod intent;
 pub mod chain;
-pub mod strategy;
 pub mod error;
+pub mod intent;
+pub mod strategy;
 
-pub use intent::*;
 pub use chain::*;
-pub use strategy::*;
 pub use error::*;
+pub use intent::*;
+pub use strategy::*;

@@ -1,8 +1,8 @@
 //! Intent types - bidirectional cross-chain yield migration
 
-use serde::{Deserialize, Serialize};
 use crate::chain::EvmChain;
 use crate::strategy::YieldStrategy;
+use serde::{Deserialize, Serialize};
 
 /// Direction of the cross-chain intent
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

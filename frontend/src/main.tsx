@@ -4,6 +4,7 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import {
+  createNetworkConfig,
   SuiClientProvider,
   WalletProvider as SuiWalletProvider,
 } from "@mysten/dapp-kit";
@@ -22,10 +23,13 @@ const queryClient = new QueryClient();
 const router = createRouter({ routeTree });
 
 // Sui networks
-const suiNetworks = {
-  testnet: { url: getFullnodeUrl("testnet") },
-  mainnet: { url: getFullnodeUrl("mainnet") },
-};
+// Use env variable to override RPC if ISP blocks default endpoint
+// Set VITE_SUI_TESTNET_RPC in .env.local if needed
+const { networkConfig: suiNetworks } = createNetworkConfig({
+  testnet: {
+    url: getFullnodeUrl("testnet"),
+  },
+});
 
 // Register router for type safety
 declare module "@tanstack/react-router" {

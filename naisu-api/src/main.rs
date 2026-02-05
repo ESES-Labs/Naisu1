@@ -5,7 +5,7 @@
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
-    http::{HeaderValue, Method, header},
+    http::{header, HeaderValue, Method},
     middleware,
 };
 use tower_http::cors::{AllowOrigin, CorsLayer};
@@ -13,11 +13,8 @@ use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
 use naisu_api::{
-    common::server::create_dual_stack_listener,
-    config::Config,
-    middleware::http_trace_middleware,
-    route::app_routes,
-    state::AppState,
+    common::server::create_dual_stack_listener, config::Config, middleware::http_trace_middleware,
+    route::app_routes, state::AppState,
 };
 
 #[tokio::main]
@@ -29,9 +26,8 @@ async fn main() -> std::io::Result<()> {
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
         .finish();
-    
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("Failed to set subscriber");
+
+    tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
 
     info!("🚀 Starting Naisu API...");
 
@@ -49,8 +45,9 @@ async fn main() -> std::io::Result<()> {
     info!("✅ Application state initialized");
 
     // Setup CORS - handle wildcard separately
-    let cors = if config.server.cors_allowed_origins.len() == 1 
-        && config.server.cors_allowed_origins[0] == "*" {
+    let cors = if config.server.cors_allowed_origins.len() == 1
+        && config.server.cors_allowed_origins[0] == "*"
+    {
         // Wildcard: allow any origin
         CorsLayer::new()
             .allow_origin(AllowOrigin::any())
@@ -68,7 +65,7 @@ async fn main() -> std::io::Result<()> {
                     .expect("Invalid CORS origin in config")
             })
             .collect();
-        
+
         CorsLayer::new()
             .allow_origin(allowed_origins)
             .allow_methods([Method::GET, Method::POST])
@@ -83,9 +80,12 @@ async fn main() -> std::io::Result<()> {
 
     // Create listener
     let listener = create_dual_stack_listener(config.server.port).await?;
-    
+
     info!("🚀 Server ready! Listening on port {}", config.server.port);
-    info!("📡 API available at http://localhost:{}/api/v1", config.server.port);
+    info!(
+        "📡 API available at http://localhost:{}/api/v1",
+        config.server.port
+    );
 
     // Run server
     axum::serve(listener, app).await
