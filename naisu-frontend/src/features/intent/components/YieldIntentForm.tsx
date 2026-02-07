@@ -7,12 +7,14 @@
  */
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useCurrentAccount } from '@mysten/dapp-kit';
 import { useMutateYieldIntent } from '../hooks/sui/useMutateYieldIntent';
 import { useQuerySuiTokenBalance } from '@/hooks/sui/useQuerySuiTokenBalance';
+import { STRATEGIES } from '@/config/contracts';
+import { StrategySelector } from './StrategySelector';
 import { motion } from 'framer-motion';
 import { Zap, Clock, TrendingUp, Check, Loader2, Wallet } from 'lucide-react';
 
@@ -39,6 +41,7 @@ export function YieldIntentForm({ onIntentCreated }: YieldIntentFormProps) {
 
   const isConnected = !!account;
   const [selectedToken, setSelectedToken] = useState<'SUI' | 'USDC'>('SUI');
+  const [selectedStrategyId, setSelectedStrategyId] = useState<number | null>(null);
 
   // Fetch balance
   const { data: balanceData, isLoading: isFetchingBalance } = useQuerySuiTokenBalance({
@@ -62,6 +65,22 @@ export function YieldIntentForm({ onIntentCreated }: YieldIntentFormProps) {
     }
   };
 
+  const handleStrategySelect = (id: number) => {
+    if (selectedStrategyId === id) {
+      setSelectedStrategyId(null);
+      return;
+    }
+
+    setSelectedStrategyId(id);
+    const strategy = STRATEGIES.find(s => s.id === id);
+    if (strategy) {
+      setMinApy(strategy.apy);
+      // Determine token type from strategy asset string
+      const token = strategy.asset === 'SUI' ? 'SUI' : 'USDC';
+      setSelectedToken(token);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!amount || !isConnected) return;
 
@@ -74,11 +93,13 @@ export function YieldIntentForm({ onIntentCreated }: YieldIntentFormProps) {
     setStep('creating');
 
     try {
+      const strategy = STRATEGIES.find(s => s.id === selectedStrategyId);
+
       const result = await createIntent({
         amount,
         minApy,
         deadline,
-        targetProtocol: 'any',
+        targetProtocol: strategy ? strategy.protocol.toLowerCase() : 'any',
         token: selectedToken,
       });
 
@@ -99,6 +120,7 @@ export function YieldIntentForm({ onIntentCreated }: YieldIntentFormProps) {
     setAmount('');
     setMinApy(7.5);
     setDeadline(1);
+    setSelectedStrategyId(null);
     setStep('form');
     reset();
   };
@@ -290,39 +312,44 @@ export function YieldIntentForm({ onIntentCreated }: YieldIntentFormProps) {
             </div>
           </div>
 
-          {/* Min APY */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-white/70 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Minimum APY
-            </label>
-            <div className="flex gap-2">
-              {PRESET_APYS.map((apy) => (
-                <button
-                  key={apy.value}
-                  onClick={() => setMinApy(apy.value)}
-                  className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${minApy === apy.value
-                    ? `border-${apy.color.split('-')[1]}-500/50 bg-${apy.color.split('-')[1]}-500/10 ${apy.color}`
-                    : 'border-white/[0.1] bg-white/[0.03] text-white/60 hover:bg-white/[0.05]'
-                    }`}
-                >
-                  {apy.label}
-                </button>
-              ))}
+          {/* Strategy Selection */}
+          <StrategySelector selected={selectedStrategyId} onSelect={handleStrategySelect} />
+
+          {/* Manual APY Override */}
+          {!selectedStrategyId && (
+            <div className="space-y-2 pt-2 border-t border-white/[0.05]">
+              <label className="text-sm font-medium text-white/70 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Minimum APY Override
+              </label>
+              <div className="flex gap-2">
+                {PRESET_APYS.map((apy) => (
+                  <button
+                    key={apy.value}
+                    onClick={() => setMinApy(apy.value)}
+                    className={`flex-1 py-1.5 px-2 rounded-lg border text-xs font-medium transition-all ${minApy === apy.value
+                      ? `border-${apy.color.split('-')[1]}-500/50 bg-${apy.color.split('-')[1]}-500/10 ${apy.color}`
+                      : 'border-white/[0.1] bg-white/[0.03] text-white/60 hover:bg-white/[0.05]'
+                      }`}
+                  >
+                    {apy.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="20"
+                step="0.5"
+                value={minApy}
+                onChange={(e) => setMinApy(parseFloat(e.target.value))}
+                className="w-full mt-2"
+              />
+              <div className="text-center text-sm font-medium text-white/70">
+                {minApy}% minimum APY
+              </div>
             </div>
-            <input
-              type="range"
-              min="1"
-              max="20"
-              step="0.5"
-              value={minApy}
-              onChange={(e) => setMinApy(parseFloat(e.target.value))}
-              className="w-full mt-2"
-            />
-            <div className="text-center text-sm font-medium text-white/70">
-              {minApy}% minimum APY
-            </div>
-          </div>
+          )}
 
           {/* Deadline */}
           <div className="space-y-2">
@@ -354,12 +381,20 @@ export function YieldIntentForm({ onIntentCreated }: YieldIntentFormProps) {
               className="rounded-lg bg-white/[0.03] p-3 space-y-1"
             >
               <div className="flex justify-between text-xs">
-                <span className="text-white/40">Your minimum</span>
-                <span className="text-white/70">{minApy}% APY</span>
+                <span className="text-white/40">Target Strategy</span>
+                <span className="text-white/70 capitalize">
+                  {selectedStrategyId
+                    ? STRATEGIES.find(s => s.id === selectedStrategyId)?.name
+                    : `Simulated Auction (> ${minApy}%)`}
+                </span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-white/40">Expected from solvers</span>
-                <span className="text-emerald-400">{(minApy + 1).toFixed(1)}%+ APY</span>
+                <span className="text-white/40">Estimated APY</span>
+                <span className="text-emerald-400 font-medium">
+                  {selectedStrategyId
+                    ? `${STRATEGIES.find(s => s.id === selectedStrategyId)?.apy}%`
+                    : `${(minApy + 1.2).toFixed(1)}%`}
+                </span>
               </div>
             </motion.div>
           )}

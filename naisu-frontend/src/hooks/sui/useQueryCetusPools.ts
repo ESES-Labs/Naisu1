@@ -5,7 +5,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { CetusClmmSDK } from '@cetusprotocol/cetus-sui-clmm-sdk';
+// import { CetusClmmSDK } from '@cetusprotocol/cetus-sui-clmm-sdk';
 import { useNetworkConfig } from '@/hooks/useNetworkConfig';
 
 export const queryKeyCetusPools = (network?: string) => ['cetus-pools', network];

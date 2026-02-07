@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
+    "check:case": "bash scripts/check-case.sh",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -42,6 +45,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",
     "eslint": "^9.6.0",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.0",
     "globals": "^15.8.0",

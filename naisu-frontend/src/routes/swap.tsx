@@ -9,15 +9,15 @@ import { useState } from 'react';
 import { useSignAndExecuteTransaction, useCurrentAccount, useSuiClient } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { bcs } from '@mysten/sui/bcs';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { PoolSelector } from '@/components/cetus/PoolSelector';
 import { CetusPoolInfo } from '@/hooks/sui/useQueryCetusPools';
 import { useQuerySuiTokenBalance } from '@/hooks/sui/useQuerySuiTokenBalance';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowDown, Loader2, ArrowDownUp, Settings, Info } from 'lucide-react';
+import { Loader2, ArrowDownUp, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const Route = createFileRoute('/swap')({
@@ -41,7 +41,7 @@ function SwapPage() {
   // Swap state
   const [fromAmount, setFromAmount] = useState('');
   const [swapDirection, setSwapDirection] = useState<'a2b' | 'b2a'>('b2a'); // SUI -> USDC by default
-  const [slippage, setSlippage] = useState(1); // 1%
+  const [slippage, _setSlippage] = useState(1); // 1%
   const [isSwapping, setIsSwapping] = useState(false);
 
   // Get token types based on direction
@@ -238,9 +238,8 @@ function SwapPage() {
                       className="pr-28 text-2xl h-16 font-medium"
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-white/[0.05] px-3 py-2 rounded-lg">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                        fromToken.symbol === 'SUI' ? 'bg-blue-500' : 'bg-green-500'
-                      }`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${fromToken.symbol === 'SUI' ? 'bg-blue-500' : 'bg-green-500'
+                        }`}>
                         {fromToken.symbol[0]}
                       </div>
                       <span className="font-semibold text-white">{fromToken.symbol}</span>
@@ -277,9 +276,8 @@ function SwapPage() {
                         {estimatedOutput}
                       </span>
                       <div className="flex items-center gap-2 bg-white/[0.05] px-3 py-2 rounded-lg">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                          toToken.symbol === 'SUI' ? 'bg-blue-500' : 'bg-green-500'
-                        }`}>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${toToken.symbol === 'SUI' ? 'bg-blue-500' : 'bg-green-500'
+                          }`}>
                           {toToken.symbol[0]}
                         </div>
                         <span className="font-semibold text-white">{toToken.symbol}</span>

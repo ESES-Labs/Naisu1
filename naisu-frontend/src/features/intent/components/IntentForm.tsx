@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { StrategySelector } from './StrategySelector'
 import { useMutateCreateIntentApi, useTestHook } from '@/features/intent'
 import { useAccount } from 'wagmi'
@@ -43,7 +43,7 @@ export function IntentForm({ onIntentCreated }: IntentFormProps) {
       const intent = await createIntent.mutateAsync({
         direction,
         source_address: direction === 'evm_to_sui' ? evmAddress : suiAccount.address,
-        dest_address:   direction === 'evm_to_sui' ? suiAccount.address : evmAddress,
+        dest_address: direction === 'evm_to_sui' ? suiAccount.address : evmAddress,
         evm_chain: 'BaseSepolia',
         input_token: direction === 'evm_to_sui'
           ? '0x4200000000000000000000000000000000000006'
@@ -228,7 +228,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 function DirButton({ active, color, onClick, children }: { active: boolean; color: 'indigo' | 'cyan'; onClick: () => void; children: React.ReactNode }) {
   const styles = {
     indigo: active ? 'bg-indigo-500/[0.18] border border-indigo-500/35 text-indigo-300' : 'text-white/[0.38] hover:text-white/60',
-    cyan:   active ? 'bg-cyan-500/[0.18]   border border-cyan-500/35   text-cyan-300'   : 'text-white/[0.38] hover:text-white/60',
+    cyan: active ? 'bg-cyan-500/[0.18]   border border-cyan-500/35   text-cyan-300' : 'text-white/[0.38] hover:text-white/60',
   }
   return (
     <button onClick={onClick} className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-all ${styles[color]}`}>

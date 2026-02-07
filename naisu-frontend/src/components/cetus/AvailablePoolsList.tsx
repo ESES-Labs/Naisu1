@@ -5,9 +5,9 @@
  */
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useQueryCetusPools, CetusPoolInfo } from '@/hooks/sui/useQueryCetusPools';
 import { Loader2, Search, ExternalLink, Droplets, TrendingUp, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -139,11 +139,10 @@ function PoolCard({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`group relative rounded-lg border transition-all cursor-pointer ${
-        isSelected
+      className={`group relative rounded-lg border transition-all cursor-pointer ${isSelected
           ? 'border-indigo-500/50 bg-indigo-500/10 ring-2 ring-indigo-500/30'
           : 'border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.15]'
-      }`}
+        }`}
       onClick={onSelect}
     >
       <div className="p-4 space-y-3">

@@ -1,5 +1,5 @@
-import { Card, CardContent } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { STRATEGIES } from '@/config/contracts'
 import { TrendingUp, Check } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -19,19 +19,17 @@ export function StrategySelector({ selected, onSelect }: StrategySelectorProps) 
             <Card
               padding="md"
               variant={selected === strategy.id ? 'default' : 'ghost'}
-              className={`cursor-pointer transition-all duration-200 hover:border-white/[0.2] ${
-                selected === strategy.id
-                  ? 'border-indigo-500/50 bg-indigo-500/[0.08] ring-1 ring-indigo-500/30'
-                  : ''
-              }`}
+              className={`cursor-pointer transition-all duration-200 hover:border-white/[0.2] ${selected === strategy.id
+                ? 'border-indigo-500/50 bg-indigo-500/[0.08] ring-1 ring-indigo-500/30'
+                : ''
+                }`}
               onClick={() => onSelect(strategy.id)}
             >
               <CardContent className="p-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${
-                      strategy.protocol === 'Scallop' ? 'bg-orange-500/[0.15] text-orange-400' : 'bg-blue-500/[0.15] text-blue-400'
-                    }`}>
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${strategy.protocol === 'Scallop' ? 'bg-orange-500/[0.15] text-orange-400' : 'bg-blue-500/[0.15] text-blue-400'
+                      }`}>
                       <TrendingUp className="h-5 w-5" />
                     </div>
                     <div>

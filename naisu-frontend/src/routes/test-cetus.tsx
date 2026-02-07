@@ -8,13 +8,6 @@ import { Transaction } from "@mysten/sui/transactions";
 import { bcs } from "@mysten/sui/bcs";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -300,17 +293,17 @@ function CetusTestPage() {
 
     // 4. Split USDC coin for exact amount needed
     const usdcBalance = BigInt(usdcCoinObj.balance);
-    const [coinUsdcSplit] = tx.splitCoins(
+    const [_coinUsdcSplit] = tx.splitCoins(
       tx.object(usdcCoinObj.coinObjectId),
       [tx.pure.u64(usdcBalance)] // Use full balance available
     );
 
     // 5. Split SUI coin (Fixed Amount)
-    const [coinSuiFixed] = tx.splitCoins(tx.gas, [tx.pure.u64(amountMist)]);
+    const [_coinSuiFixed] = tx.splitCoins(tx.gas, [tx.pure.u64(amountMist)]);
 
     // 6. Set amounts to FULL coin amounts (not 0!)
-    const amountA = usdcBalance; // FULL USDC available
-    const amountB = amountMist;   // Fixed SUI amount
+    // const amountA = usdcBalance; // FULL USDC available
+    // const amountB = amountMist;   // Fixed SUI amount
 
     // 7. TRY SIMPLE: Just open position first (no liquidity) - TEST POOL COMPATIBILITY
     addLog("🧪 Testing: pool_script_v2::open_position (simple test)...");
@@ -377,17 +370,17 @@ function CetusTestPage() {
 
     // 4. Split USDC coin for exact amount needed
     const usdcBalance = BigInt(usdcCoinObj.balance);
-    const [coinUsdcSplit] = tx.splitCoins(
+    const [_coinUsdcSplit] = tx.splitCoins(
       tx.object(usdcCoinObj.coinObjectId),
       [tx.pure.u64(usdcBalance)] // Use full balance available
     );
 
     // 5. Split SUI coin (Fixed Amount)
-    const [coinSuiFixed] = tx.splitCoins(tx.gas, [tx.pure.u64(amountSuiMist)]);
+    const [_coinSuiFixed] = tx.splitCoins(tx.gas, [tx.pure.u64(amountSuiMist)]);
 
     // 6. Set amounts to FULL coin amounts (not 0!)
-    const amountA = usdcBalance; // FULL USDC available
-    const amountB = amountSuiMist;   // Fixed SUI amount
+    // const amountA = usdcBalance; // FULL USDC available
+    // const amountB = amountSuiMist;   // Fixed SUI amount
 
     // 7. TRY SIMPLE: Just open position first (no liquidity) - TEST POOL COMPATIBILITY
     addLog("🧪 Testing: pool_script_v2::open_position (simple test)...");

@@ -5,8 +5,8 @@
  */
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useQueryCetusPools, CetusPoolInfo } from '@/hooks/sui/useQueryCetusPools';
 import { Loader2, Search, ChevronDown, Check, Droplets } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -127,11 +127,10 @@ export function PoolSelector({ selectedPool, onSelectPool, filterByTokens }: Poo
                     <button
                       key={pool.poolAddress}
                       onClick={() => handleSelect(pool)}
-                      className={`w-full p-3 rounded-lg border transition-all text-left ${
-                        selectedPool?.poolAddress === pool.poolAddress
+                      className={`w-full p-3 rounded-lg border transition-all text-left ${selectedPool?.poolAddress === pool.poolAddress
                           ? 'border-indigo-500/50 bg-indigo-500/10'
                           : 'border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.1]'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">

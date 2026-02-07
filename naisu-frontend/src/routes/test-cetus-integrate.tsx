@@ -33,7 +33,7 @@ import toast from "react-hot-toast";
 import {
   CETUS_POOLS,
   COIN_SUI,
-  CETUS_CORE_PACKAGE,
+  // CETUS_CORE_PACKAGE,
   CETUS_INTEGRATE_PACKAGE,
   CETUS_GLOBAL_CONFIG,
   SUI_CLOCK,
@@ -42,7 +42,7 @@ import {
   buildOpenPositionCoreTx,
   buildOpenPositionWithSuiLiquidity,
   buildAddLiquidityOnlyBTx,
-  buildAddLiquidityCoreWithCoinTx,
+  // buildAddLiquidityCoreWithCoinTx,
   buildClosePositionTx,
   fetchPoolInfo,
   isSuiCoin,
@@ -216,44 +216,6 @@ function CetusIntegratePage() {
       return null;
     }
   }, [suiClient]);
-
-  // Execute transaction helper
-  const executeTx = async (buildTx: (tx: Transaction) => Transaction) => {
-    if (!account) {
-      toast.error("Please connect wallet first");
-      return;
-    }
-    setStatus("executing");
-    setLog([]);
-    setTxDigest(null);
-
-    try {
-      const tx = new Transaction();
-      buildTx(tx);
-
-      addLog("📝 Signing transaction...");
-      signAndExecuteTransaction(
-        { transaction: tx as any },
-        {
-          onSuccess: (result) => {
-            addLog(`✅ Success! Digest: ${result.digest}`);
-            setStatus("success");
-            setTxDigest(result.digest);
-            toast.success(`Transaction sent! ${result.digest.slice(0, 8)}...`);
-          },
-          onError: (error) => {
-            console.error(error);
-            addLog(`❌ Failed: ${error.message}`);
-            setStatus("error");
-            toast.error(error.message);
-          },
-        }
-      );
-    } catch (e: any) {
-      addLog(`❌ Build error: ${e.message}`);
-      setStatus("error");
-    }
-  };
 
   // 1. SWAP: SUI -> USDC/Token (or reverse)
   const runSwap = async () => {

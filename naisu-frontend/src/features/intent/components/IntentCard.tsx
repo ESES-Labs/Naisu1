@@ -6,7 +6,7 @@
 
 // Intent Card Component
 import { IntentWithBids } from '../types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatAddress, formatApy, formatTimeLeft } from '../utils/formatters';
 
 interface IntentCardProps {
@@ -55,9 +55,8 @@ export function IntentCard({ intent }: IntentCardProps) {
                 .map((bid, idx) => (
                   <div
                     key={idx}
-                    className={`flex justify-between items-center p-2 rounded ${
-                      idx === 0 ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
-                    }`}
+                    className={`flex justify-between items-center p-2 rounded ${idx === 0 ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
+                      }`}
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-lg">

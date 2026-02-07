@@ -6,9 +6,9 @@
  */
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useMutateYieldIntent, TokenType, TOKENS } from '@/features/intent/hooks/sui/useMutateYieldIntent';
 import { useMutateCancelYieldIntent } from '@/features/intent/hooks/sui/useMutateCancelYieldIntent';
 import { useQuerySuiTokenBalance } from '@/hooks/sui/useQuerySuiTokenBalance';

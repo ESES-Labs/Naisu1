@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Check, Loader2, Clock, ArrowDown, ExternalLink, AlertTriangle } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { useQueryIntentStatus, useMutateCancelYieldIntent } from '@/features/intent'
 import { useSolverCompetition, SolverRace } from '@/features/solver'
 

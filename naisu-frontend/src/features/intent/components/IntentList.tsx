@@ -6,16 +6,16 @@
  */
 
 import { useQueryIntents, IntentWithStatus, formatAmount, formatApy, formatAddress, formatTimeRemaining } from '../hooks/sui/useQueryIntents';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Loader2, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  TrendingUp, 
+import {
+  Loader2,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  TrendingUp,
   Wallet,
   Activity,
   ExternalLink
@@ -73,22 +73,22 @@ export function IntentList() {
     <div className="space-y-4">
       {/* Stats */}
       <div className="flex gap-4">
-        <StatBadge 
-          label="Open" 
-          value={openIntents.length} 
-          color="indigo" 
+        <StatBadge
+          label="Open"
+          value={openIntents.length}
+          color="indigo"
           icon={Clock}
         />
-        <StatBadge 
-          label="Fulfilled" 
-          value={fulfilledIntents.length} 
-          color="emerald" 
+        <StatBadge
+          label="Fulfilled"
+          value={fulfilledIntents.length}
+          color="emerald"
           icon={CheckCircle2}
         />
-        <StatBadge 
-          label="Expired" 
-          value={expiredIntents.length} 
-          color="gray" 
+        <StatBadge
+          label="Expired"
+          value={expiredIntents.length}
+          color="gray"
           icon={XCircle}
         />
       </div>
@@ -135,13 +135,12 @@ function IntentCard({ intent }: { intent: IntentWithStatus }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className={`p-4 rounded-lg border ${
-        isOpen 
-          ? 'bg-indigo-500/[0.03] border-indigo-500/20' 
+      className={`p-4 rounded-lg border ${isOpen
+          ? 'bg-indigo-500/[0.03] border-indigo-500/20'
           : isFulfilled
-          ? 'bg-emerald-500/[0.03] border-emerald-500/20'
-          : 'bg-white/[0.02] border-white/[0.06]'
-      }`}
+            ? 'bg-emerald-500/[0.03] border-emerald-500/20'
+            : 'bg-white/[0.02] border-white/[0.06]'
+        }`}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
@@ -230,7 +229,7 @@ function StatusBadge({ status }: { status: string }) {
   const label = labels[status] || status;
 
   return (
-    <Badge 
+    <Badge
       className={`${style} capitalize`}
     >
       {status === 'OPEN' && (
@@ -242,14 +241,14 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 // Stat badge component
-function StatBadge({ 
-  label, 
-  value, 
-  color, 
-  icon: Icon 
-}: { 
-  label: string; 
-  value: number; 
+function StatBadge({
+  label,
+  value,
+  color,
+  icon: Icon
+}: {
+  label: string;
+  value: number;
   color: string;
   icon: any;
 }) {
