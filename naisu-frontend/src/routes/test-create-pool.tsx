@@ -113,9 +113,9 @@ export default function TestCreatePool() {
     };
 
     // Calculate tick from price
-    const priceToTick = (price: number): number => {
-        return Math.floor(Math.log(price) / Math.log(1.0001));
-    };
+    // const priceToTick = (price: number): number => {
+    //     return Math.floor(Math.log(price) / Math.log(1.0001));
+    // };
 
     // Get max balance for selected token
     const getMaxBalance = (tokenType: string): string => {

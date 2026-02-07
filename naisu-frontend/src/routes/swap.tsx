@@ -17,7 +17,7 @@ import { CetusPoolInfo } from '@/hooks/sui/useQueryCetusPools';
 import { useQuerySuiTokenBalance } from '@/hooks/sui/useQuerySuiTokenBalance';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowDown, Loader2, ArrowDownUp, Settings, Info } from 'lucide-react';
+import { Loader2, ArrowDownUp, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const Route = createFileRoute('/swap')({
@@ -41,7 +41,7 @@ function SwapPage() {
   // Swap state
   const [fromAmount, setFromAmount] = useState('');
   const [swapDirection, setSwapDirection] = useState<'a2b' | 'b2a'>('b2a'); // SUI -> USDC by default
-  const [slippage, setSlippage] = useState(1); // 1%
+  const [slippage, _setSlippage] = useState(1); // 1%
   const [isSwapping, setIsSwapping] = useState(false);
 
   // Get token types based on direction

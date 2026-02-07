@@ -13,11 +13,11 @@ import {
 import { Transaction } from "@mysten/sui/transactions";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { Loader2 } from "lucide-react";
-import { useNetworkConfig } from "@/hooks/useNetworkConfig";
-import { useQueryClient } from "@tanstack/react-query";
+// import { useNetworkConfig } from "@/hooks/useNetworkConfig";
+// import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 export const Route = createFileRoute("/test-cetus-simple")({
@@ -34,8 +34,8 @@ function SimpleTestPage() {
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const account = useCurrentAccount();
   const client = useSuiClient();
-  const queryClient = useQueryClient();
-  const { config } = useNetworkConfig();
+  // const queryClient = useQueryClient();
+  // const { config } = useNetworkConfig();
 
   const [poolId, setPoolId] = useState(DEFAULT_POOL);
   const [status, setStatus] = useState<'idle' | 'executing' | 'success' | 'error'>('idle');
