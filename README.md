@@ -204,26 +204,20 @@ naisu1/
 
 ### 1. Setup Environment
 
-**Frontend:**
+**Frontend (`naisu-frontend`):**
 ```bash
-cd frontend
+cd naisu-frontend
 cp .env.example .env
-# Required:
-# VITE_SUI_NETWORK=testnet
-# VITE_TESTNET_INTENT_PACKAGE=0x...
+# Fill in your local configuration
 ```
 
-**Solver Agent:**
+**Solvers/Scripts (`scripts`):**
 ```bash
-cd naisu-agent
+cd scripts
 cp .env.example .env
-# Required for Verified Flow:
-# SUI_NETWORK=testnet
-
-# Optional (Untested/Experimental):
-# TESTNET_INTENT_PACKAGE=0x...
-# MAINNET_INTENT_PACKAGE=0x...
-# SOLVER_PRIVATE_KEY=...
+# Required for testing:
+# PRIVATE_KEY_EVM=...
+# PRIVATE_KEY_SUI=...
 ```
 
 ### 2. Run Solver Bots
@@ -446,16 +440,31 @@ MIT
 
 This guide documents how to manually test the Naisu Intent Bridge between Base Sepolia (EVM) and Sui Testnet found in this repo.
 
-### Prerequisites
+### 1. Prerequisites (Wallets)
 
-1.  **Wallets**:
-    *   **EVM**: MetaMask installed (Network: Base Sepolia) with **ETH** for gas.
-    *   **Sui**: Sui Wallet installed (Network: Testnet) with **SUI** for gas.
-2.  **Environment**:
-    *   Frontend `.env` configured (copy from `.env.example`).
-    *   Scripts `.env` configured (copy from `scripts/.env.example`).
+1.  **EVM Wallet**: MetaMask installed (Network: **Base Sepolia**) with **ETH** for gas.
+2.  **Sui Wallet**: Sui Wallet installed (Network: **Testnet**) with **SUI** for gas.
 
-### 1. Run the Solvers (Scripts)
+### 2. Environment Setup
+
+Before running tests, ensure you have configured the environment variables for both the frontend and the solver scripts.
+
+**Frontend Configuration:**
+```bash
+cd naisu-frontend
+cp .env.example .env
+# This file contains the contract addresses and RPC URLs for the UI.
+```
+
+**Scripts Configuration:**
+```bash
+cd scripts
+cp .env.example .env
+# You MUST provide PRIVATE_KEY_EVM and PRIVATE_KEY_SUI here.
+# These are used by the scripts to sign transactions as a solver.
+```
+
+### 3. Run the Solvers (Scripts)
 
 The Intent Bridge relies on off-chain solvers to listen for orders and fulfill them. You must run these scripts locally to simulate the solver network.
 
@@ -474,7 +483,7 @@ cd scripts
 bun run solver:sui-to-evm
 ```
 
-### 2. Run the Frontend
+### 4. Run the Frontend
 
 **Terminal 3: Frontend**
 ```bash
@@ -484,7 +493,7 @@ bun dev
 ```
 Open [http://localhost:5173](http://localhost:5173).
 
-### 3. Execute Cross-Chain Swaps
+### 5. Execute Cross-Chain Swaps
 
 #### Direction A: Base Sepolia (EVM) → Sui
 1.  Connect **MetaMask** (Base Sepolia) and **Sui Wallet** (Testnet).
