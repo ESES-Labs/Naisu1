@@ -56,6 +56,8 @@ function RootComponent() {
             <a href="/swap" className="text-sm font-medium text-indigo-400/70 hover:text-indigo-400 transition-colors">Swap</a>
             <a href="/pools" className="text-sm font-medium text-white/50 hover:text-white/70 transition-colors">Pools</a>
             <a href="/zap" className="text-sm font-medium text-purple-400/70 hover:text-purple-400 transition-colors">Zap ⚡</a>
+            <a href="/intent-bridge" className="text-sm font-medium text-cyan-400/70 hover:text-cyan-400 transition-colors">Intent Bridge</a>
+
 
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-white/35 hover:text-white/50 transition-colors outline-none data-[state=open]:text-white/70">

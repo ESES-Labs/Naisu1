@@ -18,7 +18,7 @@ Inspired by ERC-7683 (cross-chain intents) and optimized for Sui's parallel exec
 | Solver Competition | ✅ Done | Scallop + Navi solvers with bid logic |
 | Sui PTB Integration | ✅ Done | Atomic mint→fulfill transaction flow |
 | Protocol Integration | ✅ Done | Scallop testnet integration (sSUI) |
-| Cross-Chain Bridge | 🗓️ Bonus | Wormhole CCTP for EVM→Sui |
+| Intent Bridge (X-Chain) | ✅ Done | Bidirectional Sui ↔ EVM Intent Bridge |
 
 ---
 
@@ -100,7 +100,8 @@ User → Intent → Solver A: "I give 8.2%!"
 | **Sui Native** | SUI → Staked SUI | N/A | **Native Staking** | ✅ Verified (Testnet) |
 | **Sui Native** | SUI → USDC/LP | N/A | Cetus | ⚠️ Implemented (Untested) |
 | **Sui Native** | SUI → sSUI | N/A | Scallop | � Planned (Mainnet/Untested) |
-| **EVM → Sui** | Base → Sui | Wormhole CCTP | Scallop, Navi | 🗓️ Bonus |
+| **Cross-Chain** | Sui → EVM | Wormhole | **Intent Bridge** | ✅ Verified (Testnet) |
+| **Cross-Chain** | EVM → Sui | Wormhole | **Intent Bridge** | ✅ Verified (Testnet) |
 
 ### Intent Flow (Implemented)
 ```
@@ -139,6 +140,28 @@ Everyone wins:
 
 ---
 
+## 🌉 Intent Bridge (Sui ↔ EVM)
+
+Naisu's Intent Bridge is a bidirectional, solver-based cross-chain solution powered by **Wormhole**. Unlike traditional lock-and-mint bridges, it uses a **Dutch Auction** to attract competitive solvers, ensuring users get the best execution and speed.
+
+### Direction A: EVM → Sui
+1. **User Creates Order**: User locks USDC on Base Sepolia and specifies a SUI reward for the solver.
+2. **Competitive Bidding**: Dutch Auction starts. The SUI reward for the solver increases over time.
+3. **Solver Fulfillment**: A solver detects the order, pays the user on Sui (Native SUI), and emits a fulfillment message.
+4. **VAA Verification**: Once the Wormhole Guardians sign the message (VAA), the solver uses it to unlock the USDC on Base.
+
+### Direction B: Sui → EVM
+1. **User Creates Intent**: User locks SUI on Sui and specifies an ETH/USDC output.
+2. **Solver Action**: Solver fulfills the user's intent on EVM (Base Sepolia).
+3. **Settlement**: Solver provides the signed VAA to the Sui contract to receive the locked SUI.
+
+### Why Intent Bridge?
+- **Speed**: Solvers fulfill natively on the target chain instantly, effectively "fast-bridging" for the user.
+- **Capital Efficiency**: Solvers take the bridging risk/time in exchange for a spread.
+- **Security**: All settlements are backed by Wormhole's decentralized guardian network.
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
@@ -146,7 +169,7 @@ Everyone wins:
 | **Frontend** | React + Vite + TypeScript |
 | **Sui Contracts** | Move (Shared Objects) |
 | **Solvers** | Rust / TypeScript (bots) |
-| **Bridge** | Wormhole CCTP (bonus) |
+| **Bridge** | Wormhole (Base ↔ Sui) |
 | **Backend** | Rust (Axum) - minimal |
 
 ---
@@ -155,20 +178,19 @@ Everyone wins:
 
 ```
 naisu1/
-├── contracts/
-│   └── sui/              # Move project
-│       └── sources/
-│           ├── intent.move      # YieldIntent Shared Object
-│           ├── solver.move      # Fulfill logic
-│           └── adapter.move     # Protocol adapters
+├── naisu-contracts/      # All Smart Contracts
+│   ├── sui/              # Move project (Intent Engine)
+│   └── evm/              # Solidity (Base Sepolia)
 ├── naisu-core/           # Shared types
 ├── naisu-api/            # Axum REST API (minimal)
-├── naisu-solver/         # Solver bots (NEW)
-│   ├── scallop-solver.ts
-│   ├── navi-solver.ts
-│   └── aggregator-solver.ts
+├── scripts/              # Integration & Bot scripts
+│   ├── solver/           # Intent Bridge Solvers
+│   │   ├── solver_sui_to_evm.ts
+│   │   └── solver_evm_to_sui.ts
+│   ├── create-intent-sui-to-evm.ts
+│   └── create-intent-evm-to-sui.ts
 ├── naisu-sui/            # Sui PTB builder
-└── frontend/             # React dApp
+└── naisu-frontend/       # React dApp (Refactoring)
 ```
 
 ---
@@ -295,7 +317,7 @@ Bid APY:        8.3% (830 bps)  ← User gets this
 
 - 🌊 **Sui** - Intent standard with Shared Objects
 - 🏦 **DeFi** - Competitive yield marketplace
-- 🔗 **Cross-chain** - Wormhole CCTP (bonus feature)
+- 🔗 **Cross-chain** - Bidirectional Intent Bridge via Wormhole
 
 ---
 
