@@ -26,14 +26,29 @@ import { docsRouter } from './docs'
 
 export const app = new Hono()
 
+const corsOrigins = config.cors.origin
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+const allowAllOrigins = corsOrigins.includes('*')
+
 // Global middleware
 app.use(requestId())
 app.use(secureHeaders())
 app.use(
   cors({
-    origin: config.cors.origin,
+    origin: (requestOrigin) => {
+      if (allowAllOrigins) {
+        // Mirror caller origin when possible (works with credentials across domains).
+        return requestOrigin || '*'
+      }
+      if (!requestOrigin) {
+        return corsOrigins[0] || ''
+      }
+      return corsOrigins.includes(requestOrigin) ? requestOrigin : ''
+    },
     allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
     credentials: true,
   })
 )

@@ -4,7 +4,9 @@
  */
 import { useState, useEffect, useRef } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
+const API_BASE =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.DEV ? 'http://localhost:3000/api/v1' : 'https://dev-api.naisu.one/api/v1');
 const DEBOUNCE_MS = 400;
 
 /** Matches backend GET /uniswap-v4/swap/quote response (amounts in raw units) */

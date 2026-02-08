@@ -5,7 +5,9 @@
 import { useCallback, useState } from 'react';
 import { useWalletClient, useConfig } from 'wagmi';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
+const API_BASE =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.DEV ? 'http://localhost:3000/api/v1' : 'https://dev-api.naisu.one/api/v1');
 
 export interface BuildTxItem {
   to: string;

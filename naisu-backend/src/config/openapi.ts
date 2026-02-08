@@ -230,8 +230,8 @@ export const openapiConfig = {
       description: 'Local development server',
     },
     {
-      url: 'https://api.naisu.one',
-      description: 'Production server',
+      url: 'https://dev-api.naisu.one',
+      description: 'Deployed backend (dev API)',
     },
   ],
 }

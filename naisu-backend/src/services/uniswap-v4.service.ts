@@ -503,6 +503,47 @@ export async function quoteSwap(
     })
     const tickSpacing = Number(tickSpacingRaw)
     const contractFee = Number(feeRaw)
+
+    // Try on-contract quote first (same flow as scripts/base-sepolia-test.ts).
+    // If this succeeds, return immediately and avoid false negatives from pool probing.
+    if (feeOverride === undefined || feeOverride === contractFee) {
+      try {
+        const [amountOut, priceX18Raw] = await swap.read.getSwapQuote([tokenIn, tokenOut, amountIn])
+        const effectiveFee = feeOverride ?? contractFee
+        const feeAmount = (amountIn * BigInt(effectiveFee)) / BigInt(1_000_000)
+        const amountAfterFee = amountIn - feeAmount
+        const poolId = derivePoolId(tokenIn, tokenOut, effectiveFee, tickSpacing)
+        let sqrtPriceX96 = 0n
+        let tick = 0
+        try {
+          const slot0 = await readPoolSlot0(poolManager, poolId)
+          sqrtPriceX96 = slot0.sqrtPriceX96
+          tick = slot0.tick
+        } catch (_error) {
+          // Keep quote response usable even if slot0 introspection fails.
+          void _error
+        }
+
+        return {
+          poolId,
+          poolManager: poolManagerAddress,
+          sqrtPriceX96: sqrtPriceX96.toString(),
+          tick,
+          tickSpacing,
+          amountIn: amountIn.toString(),
+          amountInAfterFee: amountAfterFee.toString(),
+          expectedOutput: amountOut.toString(),
+          priceX18: BigInt(priceX18Raw).toString(),
+          priceImpact: '0.00',
+          fee: effectiveFee,
+          quoteMethod: 'contract',
+        }
+      } catch (_error) {
+        // Continue to tier probing + fallback math
+        void _error
+      }
+    }
+
     const feeCandidates = [
       ...(feeOverride !== undefined ? [feeOverride] : []),
       contractFee,
