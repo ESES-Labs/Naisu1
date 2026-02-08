@@ -89,11 +89,24 @@ const SwapPage: React.FC = () => {
 
   const handleSwapAction = async () => {
     if (!address || !payAmount || parseFloat(payAmount) <= 0) return;
-    setSwapStatus(isBuilding ? 'building' : 'signing');
+    if (!isConnected) {
+      connect({ connector: connectors[0] });
+      return;
+    }
+    
+    setSwapStatus('building');
     clearError();
+    
     try {
       const amountInRaw = parseUnits(payAmount, payToken.decimals).toString();
-      await buildAndSign({
+      console.log('[Swap] Starting swap:', {
+        sender: address,
+        tokenIn: payToken.address,
+        tokenOut: receiveToken.address,
+        amountIn: amountInRaw,
+      });
+      
+      const hashes = await buildAndSign({
         sender: address,
         tokenIn: payToken.address,
         tokenOut: receiveToken.address,
@@ -101,16 +114,25 @@ const SwapPage: React.FC = () => {
         minAmountOut: '0',
         deadlineSeconds: 3600,
       });
+      
+      console.log('[Swap] Success! Tx hashes:', hashes);
       setSwapStatus('success');
       setPayAmount('');
       setTimeout(() => setSwapStatus('idle'), 4000);
-    } catch {
+    } catch (err) {
+      console.error('[Swap] Failed:', err);
       setSwapStatus('idle');
     }
   };
 
-  const statusMessage = swapStatus === 'building' ? 'Building tx...' : swapStatus === 'signing' ? 'Sign in wallet...' : swapStatus === 'success' ? 'Success' : null;
-  const canSwap = isConnected && address && payAmount && parseFloat(payAmount) > 0 && !isBusy && swapStatus === 'idle';
+  const statusMessage = isBuilding 
+    ? 'Building transaction...' 
+    : isSigning 
+      ? 'Confirm in wallet...' 
+      : swapStatus === 'success' 
+        ? 'Swap successful!' 
+        : null;
+  const canSwap = isConnected && address && payAmount && parseFloat(payAmount) > 0 && !isBusy;
 
   const { balance: payBalance, formatted: payBalanceFormatted, isLoading: payBalanceLoading } = useTokenBalance(
     payToken.address as `0x${string}`,
@@ -321,21 +343,21 @@ const SwapPage: React.FC = () => {
 
           <button
             onClick={handleSwapAction}
-            disabled={!canSwap}
+            disabled={!canSwap && isConnected}
             className={`w-full mt-4 font-extrabold text-lg py-4 rounded-xl shadow-[0_0_20px_rgba(13,242,223,0.3)] transition-all flex items-center justify-center gap-2
               ${swapStatus === 'success' ? 'bg-emerald-500 text-white' : 'bg-gradient-to-r from-teal-400 to-cyan-400 hover:from-teal-300 hover:to-cyan-300 text-black'}
-              ${!canSwap ? 'opacity-50 cursor-not-allowed' : ''}`}
+              ${!canSwap && isConnected ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {!isConnected && 'Connect Wallet'}
-            {isConnected && !payAmount && 'Enter Amount'}
-            {isConnected && payAmount && (isBusy || statusMessage) && (
+            {isConnected && !payAmount && !isBusy && 'Enter Amount'}
+            {isConnected && isBusy && statusMessage && (
               <>
                 <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
                 {statusMessage}
               </>
             )}
-            {isConnected && payAmount && !isBusy && !statusMessage && swapStatus === 'idle' && 'Swap'}
-            {swapStatus === 'success' && !isBusy && (
+            {isConnected && payAmount && !isBusy && swapStatus !== 'success' && 'Swap'}
+            {isConnected && swapStatus === 'success' && !isBusy && (
               <>
                 <span className="material-symbols-outlined">check</span>
                 Success
