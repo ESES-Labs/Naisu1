@@ -5,19 +5,37 @@
 version = 4
 
 [pinned.testnet.MoveStdlib]
-source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "5484a7e2b67cfc116cd235fa0b8e2b858058823b" }
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "75515e79e182c37b135a9984c6c1f08a2c383736" }
+use_environment = "testnet"
+manifest_digest = "C4FE4C91DE74CBF223B2E380AE40F592177D21870DC2D7EB6227D2D694E05363"
+deps = {}
+
+[pinned.testnet.MoveStdlib_1]
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "041c5f2bae2fe52079e44b70514333532d69f4e6" }
 use_environment = "testnet"
 manifest_digest = "C4FE4C91DE74CBF223B2E380AE40F592177D21870DC2D7EB6227D2D694E05363"
 deps = {}
 
 [pinned.testnet.Sui]
-source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "5484a7e2b67cfc116cd235fa0b8e2b858058823b" }
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "75515e79e182c37b135a9984c6c1f08a2c383736" }
 use_environment = "testnet"
 manifest_digest = "7AFB66695545775FBFBB2D3078ADFD084244D5002392E837FDE21D9EA1C6D01C"
 deps = { MoveStdlib = "MoveStdlib" }
 
+[pinned.testnet.Sui_1]
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "041c5f2bae2fe52079e44b70514333532d69f4e6" }
+use_environment = "testnet"
+manifest_digest = "7AFB66695545775FBFBB2D3078ADFD084244D5002392E837FDE21D9EA1C6D01C"
+deps = { MoveStdlib = "MoveStdlib_1" }
+
+[pinned.testnet.Wormhole]
+source = { local = "deps/wormhole/sui/wormhole" }
+use_environment = "testnet"
+manifest_digest = "6996F1AB8CD448FFBA142C085C488FE8A46B485E61E38A1891EFA52B30D9C12E"
+deps = { Sui = "Sui_1" }
+
 [pinned.testnet.naisu]
 source = { root = true }
 use_environment = "testnet"
-manifest_digest = "CC15E09306E902854F6BDD9B90D21287DB7EC557173965E5355493A2783E25B3"
-deps = { Sui = "Sui" }
+manifest_digest = "AAC14F97872CD58662FF1D4111D444C1FFC6575B8F0FA558494AE3D10CA4AF63"
+deps = { Sui = "Sui", Wormhole = "Wormhole" }

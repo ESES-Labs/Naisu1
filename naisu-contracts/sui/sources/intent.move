@@ -1,413 +1,277 @@
-/// Naisu Intent - Yield Intent Marketplace on Sui
-///
-/// Users create yield intents, solvers compete to fulfill them.
-/// Winner is the solver offering highest APY above user's minimum.
-module naisu::intent {
+module intent_bridge::intent {
     use sui::coin::{Self, Coin};
+    use sui::sui::SUI;
+    use sui::balance::{Self, Balance};
     use sui::event;
+    use sui::bcs;
+    use wormhole::vaa::{Self};
+    use wormhole::external_address::{Self};
+    use wormhole::state::{State};
+    use sui::clock::{Self, Clock};
+    use std::vector;
     use sui::object::{Self, UID};
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
-    use std::string::String;
 
-    // ============ Constants ============
-
-    /// Intent status: Open for bidding
-    const STATUS_OPEN: u8 = 0;
-    /// Intent status: Fulfilled by solver
-    const STATUS_FULFILLED: u8 = 1;
-    /// Intent status: Expired/cancelled
-    const STATUS_EXPIRED: u8 = 2;
-
-    // ============ Errors ============
-
-    /// Intent is not in OPEN status
-    const EIntentNotOpen: u64 = 0;
-    /// Intent has expired
-    const EIntentExpired: u64 = 1;
-    /// APY offered is below user's minimum
-    const EInsufficientApy: u64 = 2;
-    /// Not the intent owner
-    const ENotOwner: u64 = 3;
-    /// Intent not yet expired
-    const ENotExpired: u64 = 4;
-    /// Invalid input amount
-    const EInvalidAmount: u64 = 5;
-    /// Solver fee calculation error
-    const EFeeCalculation: u64 = 6;
+    // ============ Error Codes ============
+    
+    const ENotAuthorizedSolver: u64 = 0;
+    const EInvalidEvmAddress: u64 = 1;
+    const EZeroAmount: u64 = 2;
+    const EInvalidChain: u64 = 3;
+    const EInvalidEmitter: u64 = 4;
+    const EInvalidIntentId: u64 = 5;
+    const EBidTooLow: u64 = 6;
 
     // ============ Structs ============
 
-    /// YieldIntent - Shared Object discoverable by solvers
-    public struct YieldIntent<phantom T> has key {
+    /// Intent: A shared object representing a user's cross-chain swap intent with Dutch Auction.
+    public struct Intent has key, store {
         id: UID,
-        /// User who created the intent
-        user: address,
-        /// Locked input asset (e.g., USDC)
-        input: Coin<T>,
-        /// Minimum acceptable APY (basis points, e.g., 750 = 7.5%)
-        min_apy: u64,
-        /// Deadline timestamp (ms)
-        deadline: u64,
-        /// Current status
-        status: u8,
-        /// Timestamp when created
-        created_at: u64,
-        /// Target protocol (optional, "any" for any protocol)
-        target_protocol: String,
+        /// The locked SUI balance to be released to solver
+        input_balance: Balance<SUI>,
+        /// User's EVM address to receive ETH (20 bytes)
+        recipient_evm: vector<u8>,
+        /// Auction: Starting amount of ETH expected (in wei)
+        start_output_amount: u64,
+        /// Auction: Minimum amount of ETH expected (floor)
+        min_output_amount: u64,
+        /// Auction: Start timestamp (ms)
+        start_time: u64,
+        /// Auction: Duration (ms)
+        duration: u64,
+        /// Original creator of the intent
+        creator: address,
     }
 
-    /// Receipt given to user after fulfillment
-    public struct YieldReceipt<phantom Y> has key {
+    public struct SolverConfig has key, store {
         id: UID,
-        /// Original user
-        user: address,
-        /// Protocol that was used (e.g., "scallop", "navi")
-        protocol: String,
-        /// APY achieved (basis points)
-        apy: u64,
-        /// Amount deposited
-        amount: u64,
-        /// Timestamp
-        fulfilled_at: u64,
-    }
-
-    /// Solver capability (optional, for authorized solvers)
-    public struct SolverCap has key, store {
-        id: UID,
-        solver: address,
-        name: String,
+        admin: address,
+        required_emitter_chain: u16,
+        required_emitter_address: vector<u8>,
     }
 
     // ============ Events ============
 
-    /// Emitted when intent is created
     public struct IntentCreated has copy, drop {
         intent_id: address,
-        user: address,
-        amount: u64,
-        min_apy: u64,
-        deadline: u64,
-        target_protocol: String,
+        creator: address,
+        sui_amount: u64,
+        recipient_evm: vector<u8>,
+        start_output_amount: u64,
+        min_output_amount: u64,
+        start_time: u64,
+        duration: u64,
     }
 
-    /// Emitted when intent is fulfilled
-    public struct IntentFulfilled has copy, drop {
+    public struct IntentClaimed has copy, drop {
         intent_id: address,
-        user: address,
         solver: address,
-        protocol: String,
-        apy: u64,
-        user_surplus: u64, // How much better than minimum
-        solver_fee: u64,
+        sui_amount: u64,
     }
 
-    /// Emitted when intent is cancelled
-    public struct IntentCancelled has copy, drop {
-        intent_id: address,
-        user: address,
-        reason: u8, // 0 = expired, 1 = user cancelled
+    // ============ Init Function ============
+
+    fun init(ctx: &mut TxContext) {
+        let sender = tx_context::sender(ctx);
+        
+        // Initial dummy config, updated by admin later
+        let config = SolverConfig {
+            id: object::new(ctx),
+            admin: sender,
+            required_emitter_chain: 10004, // Base Sepolia
+            required_emitter_address: vector::empty(),
+        };
+        
+        transfer::share_object(config);
     }
 
-    // ============ Public Functions ============
+    // ============ Public Entry Functions ============
 
-    /// Create a new yield intent
-    /// 
-    /// User locks their assets and sets minimum APY requirement.
-    /// Solvers will compete to offer better rates.
-    ///
-    /// # Arguments
-    /// * `input` - The coin to deposit (e.g., USDC)
-    /// * `min_apy` - Minimum acceptable APY in basis points (e.g., 750 = 7.5%)
-    /// * `deadline` - Duration in seconds from now
-    /// * `target_protocol` - "any" or specific protocol name
-    /// * `ctx` - Transaction context
-    public entry fun create_intent<T>(
-        input: Coin<T>,
-        min_apy: u64,
-        deadline: u64,
-        target_protocol: String,
+    /// Create a new Dutch Auction intent.
+    public fun create_intent(
+        payment: Coin<SUI>,
+        recipient_evm: vector<u8>,
+        start_output_amount: u64,
+        min_output_amount: u64,
+        duration: u64,
+        clock: &Clock,
         ctx: &mut TxContext
     ) {
-        let amount = coin::value(&input);
-        assert!(amount > 0, EInvalidAmount);
-
-        let now = tx_context::epoch_timestamp_ms(ctx);
-        let deadline_ms = now + (deadline * 1000); // Convert to ms
-
-        let intent = YieldIntent<T> {
+        let sui_amount = coin::value(&payment);
+        assert!(sui_amount > 0, EZeroAmount);
+        assert!(vector::length(&recipient_evm) == 20, EInvalidEvmAddress);
+        
+        let creator = tx_context::sender(ctx);
+        let start_time = clock::timestamp_ms(clock);
+        
+        let intent = Intent {
             id: object::new(ctx),
-            user: tx_context::sender(ctx),
-            input,
-            min_apy,
-            deadline: deadline_ms,
-            status: STATUS_OPEN,
-            created_at: now,
-            target_protocol,
+            input_balance: coin::into_balance(payment),
+            recipient_evm,
+            start_output_amount,
+            min_output_amount,
+            start_time,
+            duration,
+            creator,
         };
-
+        
         let intent_id = object::uid_to_address(&intent.id);
-
-        // Emit event for solver discovery
+        
         event::emit(IntentCreated {
             intent_id,
-            user: tx_context::sender(ctx),
-            amount,
-            min_apy,
-            deadline: deadline_ms,
-            target_protocol,
+            creator,
+            sui_amount,
+            recipient_evm: intent.recipient_evm,
+            start_output_amount,
+            min_output_amount,
+            start_time,
+            duration
         });
-
-        // Make discoverable by solvers (CRITICAL: Shared object)
+        
         transfer::share_object(intent);
     }
 
-    /// Fulfill intent - called by winning solver
-    ///
-    /// Winner deposits to protocol, gives yield tokens to user,
-    /// claims solver fee from spread.
-    ///
-    /// # Arguments
-    /// * `intent` - The intent to fulfill (must be OPEN)
-    /// * `output_coin` - Yield-bearing tokens for user (e.g., sUSDC)
-    /// * `protocol` - Name of protocol used
-    /// * `apy` - APY achieved (basis points, must be >= min_apy)
-    /// * `ctx` - Transaction context
-    ///
-    /// # Note
-    /// This function assumes the solver has already deposited to the
-    /// target protocol and is passing the resulting yield tokens.
-    public entry fun fulfill_intent<T, Y>(
-        intent: YieldIntent<T>,
-        output_coin: Coin<Y>,
-        protocol: String,
-        apy: u64,
+    /// Claim an intent using a Wormhole VAA that proves fulfillment on EVM.
+    /// VAA Payload must be: [IntentID (32b)] [SolverAddress (32b, padded)] [AmountPaid (32b, padded)]
+    public fun claim_intent(
+        intent: Intent,
+        config: &SolverConfig,
+        wormhole_state: &State,
+        clock: &Clock,
+        vaa_buf: vector<u8>,
         ctx: &mut TxContext
     ) {
-        // Verify intent is open
-        assert!(intent.status == STATUS_OPEN, EIntentNotOpen);
+        // 1. Verify VAA
+        let vaa = vaa::parse_and_verify(wormhole_state, vaa_buf, clock);
 
-        // Verify not expired
-        let now = tx_context::epoch_timestamp_ms(ctx);
-        assert!(now <= intent.deadline, EIntentExpired);
+        // 2. Verify Emitter
+        assert!(vaa::emitter_chain(&vaa) == config.required_emitter_chain, EInvalidChain);
+        let emitter_ext = vaa::emitter_address(&vaa);
+        let emitter_bytes = external_address::to_bytes(emitter_ext);
+        assert!(emitter_bytes == config.required_emitter_address, EInvalidEmitter);
 
-        // Verify APY meets minimum
-        assert!(apy >= intent.min_apy, EInsufficientApy);
-
-        let solver = tx_context::sender(ctx);
-        let input_amount = coin::value(&intent.input);
-
-        // Calculate user surplus (how much better than minimum)
-        let user_surplus = apy - intent.min_apy;
-
-        // Solver fee: half of the spread (configurable)
-        let solver_fee_bps = user_surplus / 2;
-
-        // Create receipt for user
-        let receipt = YieldReceipt<Y> {
-            id: object::new(ctx),
-            user: intent.user,
-            protocol,
-            apy,
-            amount: input_amount,
-            fulfilled_at: now,
+        // 3. Extract Payload (96 bytes expected: 32ID + 32Solver + 32Amount)
+        // Correct order: take timestamp first (borrow), then payload (move/consume)
+        let timestamp = vaa::timestamp(&vaa); // Seconds
+        let payload = vaa::take_payload(vaa);
+        
+        // A. Intent ID (0-32)
+        let mut intent_id_vec = vector::empty<u8>();
+        let mut i = 0;
+        while (i < 32) {
+            vector::push_back(&mut intent_id_vec, *vector::borrow(&payload, i));
+            i = i + 1;
         };
 
-        let intent_id = object::uid_to_address(&intent.id);
+        // B. Solver Address (32-64)
+        let mut solver_vec = vector::empty<u8>();
+        while (i < 64) {
+             vector::push_back(&mut solver_vec, *vector::borrow(&payload, i));
+             i = i + 1;
+        };
 
-        // Emit fulfillment event
-        event::emit(IntentFulfilled {
-            intent_id,
-            user: intent.user,
-            solver,
-            protocol,
-            apy,
-            user_surplus,
-            solver_fee: solver_fee_bps,
-        });
+        // C. Amount Paid (64-96)
+        let mut amount_bytes = vector::empty<u8>();
+        let mut k = 88; // Last 8 bytes of the 32-byte chunk starting at 64 (so 64+24 = 88)
+        while (k < 96) {
+            vector::push_back(&mut amount_bytes, *vector::borrow(&payload, k));
+            k = k + 1;
+        };
+        let amount_paid = bytes_to_u64_be(amount_bytes);
 
-        // Transfer yield tokens to user
-        transfer::public_transfer(output_coin, intent.user);
+        // 4. Verify Intent Match
+        let intent_id_addr = object::uid_to_address(&intent.id);
+        let intent_id_bytes = bcs::to_bytes(&intent_id_addr);
+        assert!(intent_id_bytes == intent_id_vec, EInvalidIntentId);
 
-        // Transfer receipt to user
-        transfer::transfer(receipt, intent.user);
-
-        // Transfer input to solver (they deposit to protocol)
-        // In production, solver would deposit this to protocol
-        let YieldIntent { 
-            id, 
-            user: _, 
-            input,
-            min_apy: _, 
-            deadline: _, 
-            status: _, 
-            created_at: _, 
-            target_protocol: _ 
-        } = intent;
-        
-        transfer::public_transfer(input, solver);
-        object::delete(id);
-    }
-
-    /// Cancel expired intent and reclaim assets
-    ///
-    /// Can only be called by intent owner after deadline.
-    public entry fun cancel_expired_intent<T>(
-        intent: YieldIntent<T>,
-        ctx: &mut TxContext
-    ) {
+        // 5. Verify Solver Authorization
         let caller = tx_context::sender(ctx);
-        assert!(intent.user == caller, ENotOwner);
+        let caller_bytes = bcs::to_bytes(&caller);
+        assert!(caller_bytes == solver_vec, ENotAuthorizedSolver);
 
-        let now = tx_context::epoch_timestamp_ms(ctx);
-        assert!(now > intent.deadline, ENotExpired);
-
-        let intent_id = object::uid_to_address(&intent.id);
-
-        // Emit cancellation event
-        event::emit(IntentCancelled {
-            intent_id,
-            user: intent.user,
-            reason: 0, // Expired
-        });
-
-        // Return locked assets to user
-        let YieldIntent { 
-            id, 
-            user: _, 
-            input,
-            min_apy: _, 
-            deadline: _, 
-            status: _, 
-            created_at: _, 
-            target_protocol: _ 
-        } = intent;
-        
-        transfer::public_transfer(input, caller);
-        object::delete(id);
-    }
-
-    /// User cancels intent before expiry (emergency)
-    ///
-    /// This is a "soft" cancel - requires intent to not be in process.
-    /// In production, might require timelock or penalty.
-    public entry fun user_cancel_intent<T>(
-        intent: YieldIntent<T>,
-        ctx: &mut TxContext
-    ) {
-        let caller = tx_context::sender(ctx);
-        assert!(intent.user == caller, ENotOwner);
-        assert!(intent.status == STATUS_OPEN, EIntentNotOpen);
-
-        let intent_id = object::uid_to_address(&intent.id);
-
-        event::emit(IntentCancelled {
-            intent_id,
-            user: intent.user,
-            reason: 1, // User cancelled
-        });
-
-        // Return assets
-        let YieldIntent { 
-            id, 
-            user: _, 
-            input,
-            min_apy: _, 
-            deadline: _, 
-            status: _, 
-            created_at: _, 
-            target_protocol: _ 
-        } = intent;
-        
-        transfer::public_transfer(input, caller);
-        object::delete(id);
-    }
-
-    // ============ View Functions ============
-
-    /// Get intent details
-    public fun get_intent_info<T>(intent: &YieldIntent<T>): (
-        address, u64, u64, u64, u8, String
-    ) {
-        (
-            intent.user,
-            coin::value(&intent.input),
-            intent.min_apy,
-            intent.deadline,
-            intent.status,
-            intent.target_protocol,
-        )
-    }
-
-    /// Get receipt details
-    public fun get_receipt_info<Y>(receipt: &YieldReceipt<Y>): (
-        address, String, u64, u64
-    ) {
-        (
-            receipt.user,
-            receipt.protocol,
-            receipt.apy,
-            receipt.amount,
-        )
-    }
-
-    /// Check if intent is open
-    public fun is_open<T>(intent: &YieldIntent<T>): bool {
-        intent.status == STATUS_OPEN
-    }
-
-    /// Check if intent is expired
-    public fun is_expired<T>(intent: &YieldIntent<T>, ctx: &TxContext): bool {
-        tx_context::epoch_timestamp_ms(ctx) > intent.deadline
-    }
-}
-
-// ============ Tests ============
-
-#[test_only]
-module naisu::intent_tests {
-    use sui::coin::{Self, Coin};
-    use sui::sui::SUI;
-    use sui::test_scenario;
-    use naisu::intent;
-    use std::string;
-
-    #[test]
-    fun test_create_intent() {
-        let addr = @0xA;
-        let scenario = test_scenario::begin(addr);
-        
-        // Create test coin
-        let coin = coin::mint_for_testing<SUI>(1000, test_scenario::ctx(&mut scenario));
-        
-        // Create intent
-        intent::create_intent<SUI>(
-            coin,
-            750, // 7.5% min APY
-            3600, // 1 hour deadline
-            string::utf8(b"any"),
-            test_scenario::ctx(&mut scenario)
+        // 6. Verify Dutch Auction Price
+        let vaa_time_ms = (timestamp as u64) * 1000;
+        let required_amount = calculate_required_amount_internal(
+            intent.start_output_amount,
+            intent.min_output_amount,
+            intent.start_time,
+            intent.duration,
+            vaa_time_ms
         );
         
-        // Verify intent was created (would need to query in real test)
-        test_scenario::end(scenario);
+        assert!(amount_paid >= required_amount, EBidTooLow);
+
+        // 7. Payout
+        let Intent {
+            id,
+            input_balance,
+            recipient_evm: _,
+            start_output_amount: _,
+            min_output_amount: _,
+            start_time: _,
+            duration: _,
+            creator: _,
+        } = intent; 
+
+        let sui_amount = balance::value(&input_balance);
+        let sui_coin = coin::from_balance(input_balance, ctx);
+        transfer::public_transfer(sui_coin, caller);
+        
+        event::emit(IntentClaimed {
+            intent_id: intent_id_addr,
+            solver: caller,
+            sui_amount
+        });
+        
+        object::delete(id);
     }
 
-    #[test]
-    #[expected_failure(abort_code = naisu::intent::EInvalidAmount)]
-    fun test_create_intent_zero_amount() {
-        let addr = @0xA;
-        let scenario = test_scenario::begin(addr);
-        let coin = coin::mint_for_testing<SUI>(0, test_scenario::ctx(&mut scenario));
+    fun bytes_to_u64_be(bytes: vector<u8>): u64 {
+        let mut value: u64 = 0;
+        let mut i = 0;
+        let len = vector::length(&bytes);
+        while (i < len) {
+            let b = *vector::borrow(&bytes, i);
+            value = (value << 8) | (b as u64);
+            i = i + 1;
+        };
+        value
+    }
+    
+    // ============ Helper Functions ============
+
+    public fun calculate_required_amount_internal(
+        start_amount: u64,
+        min_amount: u64,
+        start_time: u64,
+        duration: u64,
+        current_time_ms: u64
+    ): u64 {
+        if (current_time_ms <= start_time) {
+            return start_amount
+        };
+
+        let elapsed = current_time_ms - start_time;
         
-        intent::create_intent<SUI>(
-            coin,
-            750,
-            3600,
-            string::utf8(b"any"),
-            test_scenario::ctx(&mut scenario)
-        );
+        if (elapsed >= duration) {
+            return min_amount
+        };
+
+        let total_drop = start_amount - min_amount;
+        let drop = ((total_drop as u128) * (elapsed as u128)) / (duration as u128);
         
-        test_scenario::end(scenario);
+        start_amount - (drop as u64)
+    }
+
+    public fun update_solver_config(
+        config: &mut SolverConfig,
+        new_chain: u16,
+        new_emitter: vector<u8>,
+        ctx: &TxContext
+    ) {
+        assert!(tx_context::sender(ctx) == config.admin, ENotAuthorizedSolver);
+        config.required_emitter_chain = new_chain;
+        config.required_emitter_address = new_emitter;
     }
 }

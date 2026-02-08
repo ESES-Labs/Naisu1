@@ -3,10 +3,15 @@ name = "naisu"
 edition = "2024.beta"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet" }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet", override = true }
+Wormhole = { local = "deps/wormhole/sui/wormhole" }
 
 [addresses]
 naisu = "0x891304702aa2fc599ce1eaf84d8cb192a393479b28cda1ebed93db8226a71da1"
 # Cetus contract addresses (testnet)
 cetus_clmm = "0x5372d555ac734e272659136c2a0cd3227f9b92de67c80dc11250307268af2db8"
 cetus_integrate = "0xab2d58dd28ff0dc19b18ab2c634397b785a38c342a8f5065ade5f53f9dbffa1c"
+
+# Intent Bridge
+intent_bridge = "0x0"
+wormhole = "0xf47329f4344f3bf0f8e436e2f7b485466cff300f12a166563995d3888c296a94"
