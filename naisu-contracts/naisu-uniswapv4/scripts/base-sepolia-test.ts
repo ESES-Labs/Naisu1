@@ -124,6 +124,42 @@ const swapAbi = [
       { name: "price", type: "uint256" },
     ],
   },
+  {
+    name: "poolManager",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    name: "DEFAULT_TICK_SPACING",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "int24" }],
+  },
+  {
+    name: "DEFAULT_FEE",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint24" }],
+  },
+] as const;
+
+const poolManagerAbi = [
+  {
+    name: "getSlot0",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "poolId", type: "bytes32" }],
+    outputs: [
+      { name: "sqrtPriceX96", type: "uint160" },
+      { name: "tick", type: "int24" },
+      { name: "protocolFee", type: "uint24" },
+      { name: "swapFee", type: "uint24" },
+    ],
+  },
 ] as const;
 
 const rewardsAbi = [
@@ -291,22 +327,82 @@ async function main() {
 
   const deadline = BigInt(Math.floor(Date.now() / 1000) + env.DEADLINE_SECONDS);
 
-  // const quote = await publicClient.readContract({
-  //   address: swap,
-  //   abi: swapAbi,
-  //   functionName: "getSwapQuote",
-  //   args: [token0, token1, swapAmountIn],
-  // });
-  // console.log("Swap quote:", quote);
+  let quote;
+  try {
+    quote = await publicClient.readContract({
+      address: swap,
+      abi: swapAbi,
+      functionName: "getSwapQuote",
+      args: [token0, token1, swapAmountIn],
+    });
+    console.log("Swap quote (contract):", quote);
+  } catch (error) {
+    // Fallback for current deployment where getSwapQuote can overflow (panic 0x11).
+    const [poolManager, fee, tickSpacing] = await Promise.all([
+      publicClient.readContract({
+        address: swap,
+        abi: swapAbi,
+        functionName: "poolManager",
+      }) as Promise<Address>,
+      publicClient.readContract({
+        address: swap,
+        abi: swapAbi,
+        functionName: "DEFAULT_FEE",
+      }) as Promise<number>,
+      publicClient.readContract({
+        address: swap,
+        abi: swapAbi,
+        functionName: "DEFAULT_TICK_SPACING",
+      }) as Promise<number>,
+    ]);
 
-  // const swapHash = await walletClient.writeContract({
-  //   address: swap,
-  //   abi: swapAbi,
-  //   functionName: "executeSwap",
-  //   args: [token0, token1, swapAmountIn, 0n, deadline],
-  // });
-  // await publicClient.waitForTransactionReceipt({ hash: swapHash });
-  // console.log("Swap tx:", swapHash);
+    const [currency0, currency1] =
+      token0.toLowerCase() < token1.toLowerCase()
+        ? [token0, token1]
+        : [token1, token0];
+
+    const poolKeyEncoded = encodeAbiParameters(
+      [
+        { name: "currency0", type: "address" },
+        { name: "currency1", type: "address" },
+        { name: "fee", type: "uint24" },
+        { name: "tickSpacing", type: "int24" },
+        { name: "hooks", type: "address" },
+      ],
+      [currency0, currency1, fee, tickSpacing, "0x0000000000000000000000000000000000000000"]
+    );
+    const poolId = keccak256(poolKeyEncoded);
+
+    const [sqrtPriceX96] = await publicClient.readContract({
+      address: poolManager,
+      abi: poolManagerAbi,
+      functionName: "getSlot0",
+      args: [poolId],
+    });
+
+    const q192 = 2n ** 192n;
+    const priceX18 = (BigInt(sqrtPriceX96) * BigInt(sqrtPriceX96) * 10n ** 18n) / q192;
+    const feeAmount = (swapAmountIn * BigInt(fee)) / 1_000_000n;
+    const amountAfterFee = swapAmountIn - feeAmount;
+    const zeroForOne = BigInt(token0) < BigInt(token1);
+    const amountOut = zeroForOne
+      ? (amountAfterFee * priceX18) / 10n ** 18n
+      : (amountAfterFee * 10n ** 18n) / priceX18;
+
+    quote = [amountOut, priceX18];
+    console.warn("getSwapQuote reverted, using fallback quote math.");
+    console.log("Swap quote (fallback):", quote);
+    void error;
+  }
+
+  const swapHash = await walletClient.writeContract({
+    address: swap,
+    abi: swapAbi,
+    functionName: "executeSwap",
+    args: [token0, token1, swapAmountIn, 0n, deadline],
+  });
+  await publicClient.waitForTransactionReceipt({ hash: swapHash });
+  console.log("Swap tx:", swapHash);
 
   // Ensure token0 < token1 for pool key
   const [currency0, currency1] =

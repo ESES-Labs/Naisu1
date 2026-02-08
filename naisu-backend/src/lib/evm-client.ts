@@ -83,27 +83,8 @@ export function getWalletClient(): WalletClient | null {
   }
 }
 
-// ============================================================================
-// Contract Addresses
-// ============================================================================
-
-export const contractAddresses = {
-  // Base Sepolia (testnet)
-  baseSepolia: {
-    swap: '0xe98c6a81ef37b14e9123b803baf08ff99098b088' as `0x${string}`,
-    rewards: '0x2c5c7eb00608f910d171c7d7a841338298076a96' as `0x${string}`,
-    poolManager: '0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408' as `0x${string}`,
-  },
-  // Base (mainnet) - TODO: Update with actual mainnet addresses
-  base: {
-    swap: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-    rewards: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-    poolManager: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-  },
-}
-
 export function getContractAddresses() {
-  return config.server.isProd ? contractAddresses.base : contractAddresses.baseSepolia
+  return config.evm.contracts
 }
 
 // ============================================================================

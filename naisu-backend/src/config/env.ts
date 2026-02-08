@@ -14,7 +14,7 @@ const envSchema = z.object({
   PORT: z
     .string()
     .transform((val) => parseInt(val, 10))
-    .default('8080'),
+    .default('3000'),
   HOST: z.string().default('0.0.0.0'),
 
   // Database (Optional - can run without DB for pure blockchain queries)
@@ -39,6 +39,20 @@ const envSchema = z.object({
     .string()
     .regex(/^0x[a-fA-F0-9]{64}$/)
     .optional(),
+
+  // Uniswap V4 contracts (selected network)
+  NAISU_SWAP_CONTRACT: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .default('0xfaBD3bdeecf7f858d6cef1c137694e19Ac7187f6'),
+  NAISU_REWARDS_CONTRACT: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .default('0xD24463BBde91Df1937F4CFC4F627fFc76728b8A6'),
+  POOL_MANAGER: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .default('0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408'),
 
   // EVM Fallback RPC (optional)
   EVM_FALLBACK_RPC_URL: z.string().url().optional(),
@@ -118,6 +132,11 @@ export const config = {
       : parseInt(env.BASE_SEPOLIA_CHAIN_ID, 10),
     fallbackRpcUrl: env.EVM_FALLBACK_RPC_URL,
     adminPrivateKey: env.EVM_ADMIN_PRIVATE_KEY,
+    contracts: {
+      swap: env.NAISU_SWAP_CONTRACT as `0x${string}`,
+      rewards: env.NAISU_REWARDS_CONTRACT as `0x${string}`,
+      poolManager: env.POOL_MANAGER as `0x${string}`,
+    },
   },
 
   // Features

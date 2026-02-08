@@ -52,8 +52,8 @@ export const CHAINS = {
 export const UNISWAP_V4 = {
   // Base Sepolia deployed contracts
   BASE_SEPOLIA: {
-    SWAP_CONTRACT: '0xe98c6a81ef37b14e9123b803baf08ff99098b088' as `0x${string}`,
-    REWARDS_CONTRACT: '0x2c5c7eb00608f910d171c7d7a841338298076a96' as `0x${string}`,
+    SWAP_CONTRACT: '0xd102861878FF7d241c50fc6Ca2f599710E69ddFf' as `0x${string}`,
+    REWARDS_CONTRACT: '0x0FB3da1B4133EcCAE050aBFA76998fE4768ae287' as `0x${string}`,
     POOL_MANAGER: '0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408' as `0x${string}`,
   },
   // Base Mainnet (TODO: Update with actual mainnet addresses)
@@ -62,8 +62,8 @@ export const UNISWAP_V4 = {
     REWARDS_CONTRACT: '0x0000000000000000000000000000000000000000' as `0x${string}`,
     POOL_MANAGER: '0x0000000000000000000000000000000000000000' as `0x${string}`,
   },
-  // Default fee (0.3%)
-  DEFAULT_FEE: 3000,
+  // Default fee (0.1%)
+  DEFAULT_FEE: 1000,
   // Default tick spacing
   DEFAULT_TICK_SPACING: 60,
   // Q96 constant for price calculations

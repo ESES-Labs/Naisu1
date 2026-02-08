@@ -22,7 +22,7 @@ contract DeployScript is Script {
         // Ethereum Mainnet
         poolManagers[1] = address(0); // Update with mainnet address
         
-        // Base Mainnet
+        // Base Mainnetpoo
         poolManagers[8453] = address(0); // Update with mainnet address
     }
 

@@ -14,6 +14,7 @@ import {
   quoteSwapSchema,
   solverCheckSchema,
   multiplePoolsSchema,
+  buildSwapTxSchema,
 } from '@models/uniswap-v4.model'
 import { rateLimit } from '@middleware/rate-limit'
 import { logger } from '@lib/logger'
@@ -32,14 +33,11 @@ uniswapV4Router.use('*', rateLimit({ windowMs: 60000, maxRequests: 100 }))
  * GET /uniswap-v4/pool/price?token0=...&token1=...
  */
 uniswapV4Router.get('/pool/price', zValidator('query', poolPriceQuerySchema), async (c) => {
-  const { token0, token1 } = c.req.valid('query')
+  const { token0, token1, fee } = c.req.valid('query')
 
   logger.info({ token0, token1 }, 'Fetching pool price')
 
-  const price = await uniswapV4Service.getPoolPrice(
-    token0 as `0x${string}`,
-    token1 as `0x${string}`
-  )
+  const price = await uniswapV4Service.getPoolPrice(token0 as `0x${string}`, token1 as `0x${string}`, fee)
 
   return c.json({
     success: true,
@@ -56,14 +54,11 @@ uniswapV4Router.get('/pool/price', zValidator('query', poolPriceQuerySchema), as
  * GET /uniswap-v4/pool/state?token0=...&token1=...
  */
 uniswapV4Router.get('/pool/state', zValidator('query', poolStateQuerySchema), async (c) => {
-  const { token0, token1 } = c.req.valid('query')
+  const { token0, token1, fee } = c.req.valid('query')
 
   logger.info({ token0, token1 }, 'Fetching pool state')
 
-  const state = await uniswapV4Service.getPoolState(
-    token0 as `0x${string}`,
-    token1 as `0x${string}`
-  )
+  const state = await uniswapV4Service.getPoolState(token0 as `0x${string}`, token1 as `0x${string}`, fee)
 
   return c.json({
     success: true,
@@ -84,13 +79,14 @@ uniswapV4Router.get('/pool/state', zValidator('query', poolStateQuerySchema), as
  * GET /uniswap-v4/pool/liquidity?token0=...&token1=...
  */
 uniswapV4Router.get('/pool/liquidity', zValidator('query', poolLiquidityQuerySchema), async (c) => {
-  const { token0, token1 } = c.req.valid('query')
+  const { token0, token1, fee } = c.req.valid('query')
 
   logger.info({ token0, token1 }, 'Fetching pool liquidity')
 
   const liquidity = await uniswapV4Service.getPoolLiquidity(
     token0 as `0x${string}`,
-    token1 as `0x${string}`
+    token1 as `0x${string}`,
+    fee
   )
 
   return c.json({
@@ -115,6 +111,7 @@ uniswapV4Router.post('/pools/batch', zValidator('json', multiplePoolsSchema), as
     pools.map((p) => ({
       token0: p.token0 as `0x${string}`,
       token1: p.token1 as `0x${string}`,
+      fee: p.fee,
     }))
   )
 
@@ -202,19 +199,58 @@ uniswapV4Router.get('/pool/slot0', zValidator('query', poolSlot0QuerySchema), as
  * GET /uniswap-v4/swap/quote?tokenIn=...&tokenOut=...&amountIn=...
  */
 uniswapV4Router.get('/swap/quote', zValidator('query', quoteSwapSchema), async (c) => {
-  const { tokenIn, tokenOut, amountIn } = c.req.valid('query')
+  const { tokenIn, tokenOut, amountIn, fee } = c.req.valid('query')
 
   logger.info({ tokenIn, tokenOut, amountIn }, 'Quoting swap')
 
   const quote = await uniswapV4Service.quoteSwap(
     tokenIn as `0x${string}`,
     tokenOut as `0x${string}`,
-    BigInt(amountIn)
+    BigInt(amountIn),
+    fee
   )
 
   return c.json({
     success: true,
     data: quote,
+  })
+})
+
+/**
+ * Build swap transaction for user to sign
+ * POST /uniswap-v4/swap/build
+ *
+ * Returns unsigned transaction(s) that the user signs client-side.
+ * Includes ERC20 approve tx if current allowance is insufficient.
+ */
+uniswapV4Router.post('/swap/build', zValidator('json', buildSwapTxSchema), async (c) => {
+  const { sender, tokenIn, tokenOut, amountIn, minAmountOut, fee, deadlineSeconds } =
+    c.req.valid('json')
+
+  logger.info({ sender, tokenIn, tokenOut, amountIn }, 'Building swap transaction')
+
+  const result = await uniswapV4Service.buildSwapTransaction({
+    sender: sender as `0x${string}`,
+    tokenIn: tokenIn as `0x${string}`,
+    tokenOut: tokenOut as `0x${string}`,
+    amountIn: BigInt(amountIn),
+    minAmountOut: BigInt(minAmountOut),
+    fee,
+    deadlineSeconds,
+  })
+
+  return c.json({
+    success: true,
+    data: {
+      transactions: result.transactions.map((tx) => ({
+        to: tx.to,
+        data: tx.data,
+        value: tx.value,
+        chainId: tx.chainId,
+        description: tx.description,
+      })),
+      summary: result.summary,
+    },
   })
 })
 
