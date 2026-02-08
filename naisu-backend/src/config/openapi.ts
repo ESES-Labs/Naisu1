@@ -249,3 +249,10 @@ export const routes = {
   solverCheck: solverCheckRoute,
   contractAddresses: contractAddressesRoute,
 }
+
+// Register route definitions so OpenAPI document generation includes paths.
+for (const route of Object.values(routes)) {
+  openapiApp.openAPIRegistry.registerPath(route)
+}
+
+export const generateOpenAPIDoc = () => openapiApp.getOpenAPIDocument(openapiConfig)

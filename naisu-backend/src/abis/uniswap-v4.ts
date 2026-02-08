@@ -90,6 +90,20 @@ export const naisuUniswapV4SwapAbi = [
   },
   {
     type: 'function',
+    name: 'getSwapQuote',
+    inputs: [
+      { name: 'tokenIn', type: 'address', internalType: 'address' },
+      { name: 'tokenOut', type: 'address', internalType: 'address' },
+      { name: 'amountIn', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [
+      { name: 'amountOut', type: 'uint256', internalType: 'uint256' },
+      { name: 'price', type: 'uint256', internalType: 'uint256' },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'owner',
     inputs: [],
     outputs: [{ name: '', type: 'address', internalType: 'address' }],
@@ -269,47 +283,42 @@ export const naisuUniswapV4RewardsAbi = [
   },
   {
     type: 'function',
-    name: 'getPoolId',
-    inputs: [
-      { name: 'token0', type: 'address', internalType: 'address' },
-      { name: 'token1', type: 'address', internalType: 'address' },
-    ],
-    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'getPoolLiquidity',
+    name: 'getPoolInfo',
     inputs: [{ name: 'poolId', type: 'bytes32', internalType: 'bytes32' }],
-    outputs: [{ name: '', type: 'uint128', internalType: 'uint128' }],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'getPoolPrice',
-    inputs: [
-      { name: 'token0', type: 'address', internalType: 'address' },
-      { name: 'token1', type: 'address', internalType: 'address' },
-    ],
     outputs: [
-      { name: 'sqrtPriceX96', type: 'uint160', internalType: 'uint160' },
-      { name: 'tick', type: 'int24', internalType: 'int24' },
+      {
+        name: 'info',
+        type: 'tuple',
+        internalType: 'struct INaisuRewards.PoolInfo',
+        components: [
+          { name: 'token0', type: 'address', internalType: 'address' },
+          { name: 'token1', type: 'address', internalType: 'address' },
+          { name: 'fee', type: 'uint24', internalType: 'uint24' },
+          { name: 'tickSpacing', type: 'int24', internalType: 'int24' },
+        ],
+      },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'getPosition',
+    name: 'getUserPosition',
     inputs: [
-      { name: 'owner', type: 'address', internalType: 'address' },
+      { name: 'user', type: 'address', internalType: 'address' },
       { name: 'poolId', type: 'bytes32', internalType: 'bytes32' },
-      { name: 'tickLower', type: 'int24', internalType: 'int24' },
-      { name: 'tickUpper', type: 'int24', internalType: 'int24' },
     ],
     outputs: [
-      { name: 'liquidity', type: 'uint128', internalType: 'uint128' },
-      { name: 'feeGrowthInside0LastX128', type: 'uint256', internalType: 'uint256' },
-      { name: 'feeGrowthInside1LastX128', type: 'uint256', internalType: 'uint256' },
+      {
+        name: 'position',
+        type: 'tuple',
+        internalType: 'struct INaisuRewards.Position',
+        components: [
+          { name: 'poolId', type: 'bytes32', internalType: 'bytes32' },
+          { name: 'liquidity', type: 'uint128', internalType: 'uint128' },
+          { name: 'tickLower', type: 'int24', internalType: 'int24' },
+          { name: 'tickUpper', type: 'int24', internalType: 'int24' },
+        ],
+      },
     ],
     stateMutability: 'view',
   },
@@ -331,11 +340,10 @@ export const naisuUniswapV4RewardsAbi = [
     type: 'function',
     name: 'removeLiquidity',
     inputs: [
-      { name: 'token0', type: 'address', internalType: 'address' },
-      { name: 'token1', type: 'address', internalType: 'address' },
+      { name: 'poolId', type: 'bytes32', internalType: 'bytes32' },
       { name: 'liquidity', type: 'uint128', internalType: 'uint128' },
-      { name: 'minAmount0', type: 'uint256', internalType: 'uint256' },
-      { name: 'minAmount1', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount0Min', type: 'uint256', internalType: 'uint256' },
+      { name: 'amount1Min', type: 'uint256', internalType: 'uint256' },
     ],
     outputs: [
       { name: 'amount0', type: 'uint256', internalType: 'uint256' },
@@ -434,6 +442,23 @@ export const naisuUniswapV4RewardsAbi = [
 // ============================================================================
 
 export const poolManagerAbi = [
+  {
+    type: 'function',
+    name: 'extsload',
+    inputs: [{ name: 'slot', type: 'bytes32', internalType: 'bytes32' }],
+    outputs: [{ name: '', type: 'bytes32', internalType: 'bytes32' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'extsload',
+    inputs: [
+      { name: 'startSlot', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'nSlots', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bytes32[]', internalType: 'bytes32[]' }],
+    stateMutability: 'view',
+  },
   {
     type: 'function',
     name: 'getSlot0',

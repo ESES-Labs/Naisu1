@@ -56,7 +56,7 @@ forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC --broadcast --verif
 
 ### 3) Initialize a pool (if needed)
 `NaisuUniswapV4Swap` and `NaisuUniswapV4Rewards` assume:
-- `fee = 3000`
+- `fee = 1000` (0.1%)
 - `tickSpacing = 60`
 - `hooks = address(0)`
 
@@ -64,7 +64,7 @@ forge script script/Deploy.s.sol --rpc-url $BASE_SEPOLIA_RPC --broadcast --verif
 export POOL_MANAGER=0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408
 export TOKEN_0=0x...
 export TOKEN_1=0x...
-export POOL_FEE=3000
+export POOL_FEE=1000
 export TICK_SPACING=60
 export SQRT_PRICE_X96=79228162514264337593543950336
 

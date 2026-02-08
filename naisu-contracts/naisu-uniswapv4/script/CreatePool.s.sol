@@ -4,13 +4,17 @@ pragma solidity ^0.8.19;
 import "forge-std/Script.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
+import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
 
 /// @title CreatePoolScript
 /// @notice Script to create Uniswap V4 pools
 /// @dev Usage: forge script script/CreatePool.s.sol --rpc-url <RPC_URL> --broadcast
 contract CreatePoolScript is Script {
+    using PoolIdLibrary for PoolKey;
+
     function setUp() public {}
 
     function run() public {
@@ -27,8 +31,6 @@ contract CreatePoolScript is Script {
 
         require(token0 < token1, "Token0 must be less than Token1");
 
-        vm.startBroadcast(deployerPrivateKey);
-
         console.log("Creating pool on PoolManager:", poolManager);
         console.log("Token0:", token0);
         console.log("Token1:", token1);
@@ -44,12 +46,20 @@ contract CreatePoolScript is Script {
             hooks: IHooks(address(0))
         });
 
-        // Initialize pool
-        int24 tick = IPoolManager(poolManager).initialize(poolKey, sqrtPriceX96);
+        PoolId poolId = poolKey.toId();
+        (uint160 existingSqrtPriceX96,,,) = StateLibrary.getSlot0(IPoolManager(poolManager), poolId);
+        if (existingSqrtPriceX96 != 0) {
+            console.log("Pool already initialized, skipping.");
+            return;
+        }
 
-        vm.stopBroadcast();
+        vm.startBroadcast(deployerPrivateKey);
+
+        int24 tick = IPoolManager(poolManager).initialize(poolKey, sqrtPriceX96);
 
         console.log("Pool created successfully!");
         console.log("Initial tick:", tick);
+
+        vm.stopBroadcast();
     }
 }

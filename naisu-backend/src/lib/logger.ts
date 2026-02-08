@@ -14,6 +14,37 @@ interface LogEntry {
 }
 
 class Logger {
+  private safeStringify(value: unknown, space?: number): string {
+    const seen = new WeakSet<object>()
+
+    return JSON.stringify(
+      value,
+      (_key, val) => {
+        if (typeof val === 'bigint') {
+          return val.toString()
+        }
+
+        if (val instanceof Error) {
+          return {
+            name: val.name,
+            message: val.message,
+            stack: val.stack,
+          }
+        }
+
+        if (typeof val === 'object' && val !== null) {
+          if (seen.has(val)) {
+            return '[Circular]'
+          }
+          seen.add(val)
+        }
+
+        return val
+      },
+      space
+    )
+  }
+
   private shouldLog(level: LogLevel): boolean {
     const levels: LogLevel[] = ['debug', 'info', 'warn', 'error']
     const configLevel = config.log.level
@@ -42,11 +73,11 @@ class Logger {
       const reset = '\x1b[0m'
       console.log(
         `${colorCode}[${entry.level.toUpperCase()}]${reset} ${entry.timestamp} - ${entry.message}`,
-        data ? JSON.stringify(data, null, 2) : ''
+        data ? this.safeStringify(data, 2) : ''
       )
     } else {
       // In production, structured JSON
-      console.log(JSON.stringify(entry))
+      console.log(this.safeStringify(entry))
     }
   }
 

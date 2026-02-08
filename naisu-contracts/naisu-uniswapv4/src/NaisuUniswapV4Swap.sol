@@ -34,8 +34,8 @@ contract NaisuUniswapV4Swap is INaisuSwap, ReentrancyGuard, Ownable, IUnlockCall
     /// @notice Authorized solvers
     mapping(address => bool) public authorizedSolvers;
 
-    /// @notice Default fee tier (0.3%)
-    uint24 public constant DEFAULT_FEE = 3000;
+    /// @notice Default fee tier (0.1%)
+    uint24 public constant DEFAULT_FEE = 1000;
 
     /// @notice Default tick spacing
     int24 public constant DEFAULT_TICK_SPACING = 60;

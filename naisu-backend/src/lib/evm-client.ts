@@ -90,8 +90,8 @@ export function getWalletClient(): WalletClient | null {
 export const contractAddresses = {
   // Base Sepolia (testnet)
   baseSepolia: {
-    swap: '0xe98c6a81ef37b14e9123b803baf08ff99098b088' as `0x${string}`,
-    rewards: '0x2c5c7eb00608f910d171c7d7a841338298076a96' as `0x${string}`,
+    swap: '0xd102861878FF7d241c50fc6Ca2f599710E69ddFf' as `0x${string}`,
+    rewards: '0x0FB3da1B4133EcCAE050aBFA76998fE4768ae287' as `0x${string}`,
     poolManager: '0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408' as `0x${string}`,
   },
   // Base (mainnet) - TODO: Update with actual mainnet addresses

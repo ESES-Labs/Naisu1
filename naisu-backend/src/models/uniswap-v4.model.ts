@@ -34,7 +34,8 @@ export const swapQuoteSchema = z.object({
   tokenIn: addressSchema,
   tokenOut: addressSchema,
   amountIn: uint256Schema,
-  fee: z.coerce.number().int().min(100).max(10000).optional().default(3000),
+  // Optional: when omitted, service probes common fee tiers.
+  fee: z.coerce.number().int().min(100).max(10000).optional(),
 })
 
 export const solverCheckSchema = z.object({
@@ -84,10 +85,18 @@ export const poolStateResponseSchema = z.object({
 export const swapQuoteResponseSchema = z.object({
   success: z.literal(true),
   data: z.object({
+    poolId: z.string(),
+    poolManager: z.string(),
+    sqrtPriceX96: z.string(),
+    tick: z.number(),
+    tickSpacing: z.number(),
+    amountIn: z.string(),
+    amountInAfterFee: z.string(),
     expectedOutput: z.string(),
+    priceX18: z.string(),
     priceImpact: z.string(),
     fee: z.number(),
-    poolId: z.string(),
+    quoteMethod: z.enum(['contract', 'fallback_math']),
   }),
 })
 
@@ -130,6 +139,57 @@ export const errorResponseSchema = z.object({
     details: z.record(z.unknown()).optional(),
   }),
 })
+
+// ============================================================================
+// Build Swap Transaction Schema
+// ============================================================================
+
+export const buildSwapTxSchema = z.object({
+  /** The address of the user who will sign & send the transaction */
+  sender: addressSchema,
+  /** Token to swap from */
+  tokenIn: addressSchema,
+  /** Token to swap to */
+  tokenOut: addressSchema,
+  /** Amount of tokenIn in raw units (e.g. 1 USDC = "1000000") */
+  amountIn: uint256Schema,
+  /** Minimum acceptable output amount in raw units (set "0" for no slippage protection) */
+  minAmountOut: uint256Schema.optional().default('0'),
+  /** Fee tier (default 3000 = 0.3%) */
+  fee: z.coerce.number().int().min(100).max(10000).optional().default(3000),
+  /** Deadline in seconds from now (default 3600 = 1 hour) */
+  deadlineSeconds: z.coerce.number().int().min(60).max(86400).optional().default(3600),
+})
+
+export type BuildSwapTxInput = z.infer<typeof buildSwapTxSchema>
+
+export const buildSwapTxResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.object({
+    /** Ordered array of transactions the user must sign & send */
+    transactions: z.array(
+      z.object({
+        to: z.string(),
+        data: z.string(),
+        value: z.string(),
+        chainId: z.number(),
+        description: z.string(),
+      })
+    ),
+    /** Summary of the swap */
+    summary: z.object({
+      tokenIn: z.string(),
+      tokenOut: z.string(),
+      amountIn: z.string(),
+      minAmountOut: z.string(),
+      deadline: z.string(),
+      swapContract: z.string(),
+      needsApproval: z.boolean(),
+    }),
+  }),
+})
+
+export type BuildSwapTxResponse = z.infer<typeof buildSwapTxResponseSchema>
 
 // ============================================================================
 // Legacy Schemas (for backward compatibility)

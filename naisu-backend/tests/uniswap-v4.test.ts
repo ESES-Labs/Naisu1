@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeAll } from 'bun:test'
 import { app } from '../src/routes'
 
-const BASE_URL = 'http://localhost:8080'
+const BASE_URL = 'http://localhost:3000'
 
 // Test tokens on Base Sepolia
 const TEST_TOKENS = {

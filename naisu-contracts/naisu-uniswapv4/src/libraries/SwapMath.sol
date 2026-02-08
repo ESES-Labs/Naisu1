@@ -21,13 +21,14 @@ library SwapMath {
         uint256 amountIn,
         bool zeroForOne
     ) internal pure returns (uint256 amountOut) {
+        liquidity;
         if (zeroForOne) {
             // token0 -> token1
-            uint256 priceX96 = uint256(sqrtPriceX96) * uint256(sqrtPriceX96) / Q96;
+            uint256 priceX96 = FullMath.mulDiv(uint256(sqrtPriceX96), uint256(sqrtPriceX96), Q96);
             amountOut = (amountIn * priceX96) / Q96;
         } else {
             // token1 -> token0
-            uint256 priceX96 = (uint256(sqrtPriceX96) * uint256(sqrtPriceX96)) / Q96;
+            uint256 priceX96 = FullMath.mulDiv(uint256(sqrtPriceX96), uint256(sqrtPriceX96), Q96);
             amountOut = (amountIn * Q96) / priceX96;
         }
     }
@@ -39,7 +40,8 @@ library SwapMath {
         uint160 sqrtPriceX96
     ) internal pure returns (uint256 price) {
         uint256 sqrtPrice = uint256(sqrtPriceX96);
-        price = (sqrtPrice * sqrtPrice * 1e18) / Q192;
+        uint256 ratioX192 = FullMath.mulDiv(sqrtPrice, sqrtPrice, 1);
+        price = FullMath.mulDiv(ratioX192, 1e18, Q192);
     }
 
     /// @notice Calculate minimum output with slippage protection
