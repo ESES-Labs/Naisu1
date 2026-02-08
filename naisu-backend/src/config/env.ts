@@ -18,7 +18,10 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
 
   // Database (Optional - can run without DB for pure blockchain queries)
-  DATABASE_URL: z.string().url().startsWith('postgresql://').optional(),
+  DATABASE_URL: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().url().startsWith('postgresql://').optional()
+  ),
 
   // CORS
   CORS_ORIGIN: z.string().default('*'),
@@ -55,7 +58,10 @@ const envSchema = z.object({
     .default('0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408'),
 
   // EVM Fallback RPC (optional)
-  EVM_FALLBACK_RPC_URL: z.string().url().optional(),
+  EVM_FALLBACK_RPC_URL: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().url().optional()
+  ),
 
   // Feature Flags
   ENABLE_UNISWAP_V4: z
@@ -64,7 +70,10 @@ const envSchema = z.object({
     .default('true'),
 
   // Redis (optional, for caching)
-  REDIS_URL: z.string().url().optional(),
+  REDIS_URL: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.string().url().optional()
+  ),
 
   // Security
   API_KEY_HEADER: z.string().default('x-api-key'),
