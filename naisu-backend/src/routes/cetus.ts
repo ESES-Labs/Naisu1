@@ -1,6 +1,6 @@
 /**
  * Cetus CLMM API Routes
- * 
+ *
  * REST API endpoints for AI agent to interact with Cetus on Sui.
  */
 import { Hono } from 'hono'
@@ -16,62 +16,62 @@ export const cetusRouter = new Hono()
 // ============================================================================
 
 const SwapSchema = z.object({
-    poolId: z.string().startsWith('0x'),
-    amountIn: z.string(),
-    aToB: z.boolean(),
+  poolId: z.string().startsWith('0x'),
+  amountIn: z.string(),
+  aToB: z.boolean(),
 })
 
 const QuoteSchema = z.object({
-    poolId: z.string().startsWith('0x'),
-    amountIn: z.string(),
-    aToB: z.boolean(),
+  poolId: z.string().startsWith('0x'),
+  amountIn: z.string(),
+  aToB: z.boolean(),
 })
 
 const PositionsSchema = z.object({
-    owner: z.string().startsWith('0x'),
+  owner: z.string().startsWith('0x'),
 })
 
 const BalanceSchema = z.object({
-    owner: z.string().startsWith('0x'),
-    coinType: z.string().optional(),
+  owner: z.string().startsWith('0x'),
+  coinType: z.string().optional(),
 })
 
 const GetCoinsSchema = z.object({
-    owner: z.string().startsWith('0x'),
-    coinType: z.string(),
+  owner: z.string().startsWith('0x'),
+  coinType: z.string(),
 })
 
 const ZapSchema = z.object({
-    poolId: z.string().startsWith('0x'),
-    amountIn: z.string(),
-    minLiquidity: z.string().optional(),
+  poolId: z.string().startsWith('0x'),
+  amountIn: z.string(),
+  minLiquidity: z.string().optional(),
 })
 
 const ZapBuildSchema = z.object({
-    poolId: z.string().startsWith('0x'),
-    coinObjectIds: z.array(z.string().startsWith('0x')),
-    amountIn: z.string(),
-    userAddress: z.string().startsWith('0x'),
+  poolId: z.string().startsWith('0x'),
+  coinObjectIds: z.array(z.string().startsWith('0x')),
+  amountIn: z.string(),
+  userAddress: z.string().startsWith('0x'),
 })
 
 const ZapQuoteSchema = z.object({
-    poolId: z.string().startsWith('0x'),
-    amountIn: z.string(),
+  poolId: z.string().startsWith('0x'),
+  amountIn: z.string(),
 })
 
 const RemoveLiquidityBuildSchema = z.object({
-    positionId: z.string().startsWith('0x'),
-    liquidityDelta: z.string(),
-    userAddress: z.string().startsWith('0x'),
+  positionId: z.string().startsWith('0x'),
+  liquidityDelta: z.string(),
+  userAddress: z.string().startsWith('0x'),
 })
 
 const HarvestSchema = z.object({
-    positionId: z.string().startsWith('0x'),
+  positionId: z.string().startsWith('0x'),
 })
 
 const HarvestBuildSchema = z.object({
-    positionId: z.string().startsWith('0x'),
-    userAddress: z.string().startsWith('0x'),
+  positionId: z.string().startsWith('0x'),
+  userAddress: z.string().startsWith('0x'),
 })
 
 // ============================================================================
@@ -79,16 +79,16 @@ const HarvestBuildSchema = z.object({
 // ============================================================================
 
 cetusRouter.get('/pools', async (c) => {
-    try {
-        const pools = cetusService.listPools()
-        return c.json({
-            success: true,
-            data: pools,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to list pools')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+  try {
+    const pools = cetusService.listPools()
+    return c.json({
+      success: true,
+      data: pools,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to list pools')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -96,17 +96,17 @@ cetusRouter.get('/pools', async (c) => {
 // ============================================================================
 
 cetusRouter.get('/pool/:id', async (c) => {
-    try {
-        const poolId = c.req.param('id')
-        const pool = await cetusService.getPoolInfo(poolId)
-        return c.json({
-            success: true,
-            data: pool,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to get pool info')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+  try {
+    const poolId = c.req.param('id')
+    const pool = await cetusService.getPoolInfo(poolId)
+    return c.json({
+      success: true,
+      data: pool,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to get pool info')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -114,17 +114,17 @@ cetusRouter.get('/pool/:id', async (c) => {
 // ============================================================================
 
 cetusRouter.post('/quote', zValidator('json', QuoteSchema), async (c) => {
-    try {
-        const body = c.req.valid('json')
-        const quote = await cetusService.getQuote(body)
-        return c.json({
-            success: true,
-            data: quote,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to get quote')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+  try {
+    const body = c.req.valid('json')
+    const quote = await cetusService.getQuote(body)
+    return c.json({
+      success: true,
+      data: quote,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to get quote')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -132,20 +132,20 @@ cetusRouter.post('/quote', zValidator('json', QuoteSchema), async (c) => {
 // ============================================================================
 
 cetusRouter.post('/swap', zValidator('json', SwapSchema), async (c) => {
-    try {
-        const body = c.req.valid('json')
-        logger.info({ body }, 'Executing swap')
+  try {
+    const body = c.req.valid('json')
+    logger.info({ body }, 'Executing swap')
 
-        const result = await cetusService.executeSwap(body)
+    const result = await cetusService.executeSwap(body)
 
-        return c.json({
-            success: result.success,
-            data: result,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to execute swap')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+    return c.json({
+      success: result.success,
+      data: result,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to execute swap')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -153,17 +153,17 @@ cetusRouter.post('/swap', zValidator('json', SwapSchema), async (c) => {
 // ============================================================================
 
 cetusRouter.post('/positions', zValidator('json', PositionsSchema), async (c) => {
-    try {
-        const { owner } = c.req.valid('json')
-        const positions = await cetusService.getPositions(owner)
-        return c.json({
-            success: true,
-            data: positions,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to get positions')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+  try {
+    const { owner } = c.req.valid('json')
+    const positions = await cetusService.getPositions(owner)
+    return c.json({
+      success: true,
+      data: positions,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to get positions')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -171,17 +171,17 @@ cetusRouter.post('/positions', zValidator('json', PositionsSchema), async (c) =>
 // ============================================================================
 
 cetusRouter.post('/balance', zValidator('json', BalanceSchema), async (c) => {
-    try {
-        const { owner, coinType } = c.req.valid('json')
-        const balance = await cetusService.getBalance(owner, coinType)
-        return c.json({
-            success: true,
-            data: balance,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to get balance')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+  try {
+    const { owner, coinType } = c.req.valid('json')
+    const balance = await cetusService.getBalance(owner, coinType)
+    return c.json({
+      success: true,
+      data: balance,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to get balance')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -189,17 +189,17 @@ cetusRouter.post('/balance', zValidator('json', BalanceSchema), async (c) => {
 // ============================================================================
 
 cetusRouter.post('/coins', zValidator('json', GetCoinsSchema), async (c) => {
-    try {
-        const { owner, coinType } = c.req.valid('json')
-        const coins = await cetusService.getCoinObjects(owner, coinType)
-        return c.json({
-            success: true,
-            data: coins,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to get coins')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+  try {
+    const { owner, coinType } = c.req.valid('json')
+    const coins = await cetusService.getCoinObjects(owner, coinType)
+    return c.json({
+      success: true,
+      data: coins,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to get coins')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -208,20 +208,20 @@ cetusRouter.post('/coins', zValidator('json', GetCoinsSchema), async (c) => {
 // ============================================================================
 
 cetusRouter.post('/zap', zValidator('json', ZapSchema), async (c) => {
-    try {
-        const body = c.req.valid('json')
-        logger.info({ body }, 'Executing zap')
+  try {
+    const body = c.req.valid('json')
+    logger.info({ body }, 'Executing zap')
 
-        const result = await cetusService.executeZap(body)
+    const result = await cetusService.executeZap(body)
 
-        return c.json({
-            success: result.success,
-            data: result,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to execute zap')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+    return c.json({
+      success: result.success,
+      data: result,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to execute zap')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -229,20 +229,20 @@ cetusRouter.post('/zap', zValidator('json', ZapSchema), async (c) => {
 // ============================================================================
 
 cetusRouter.post('/harvest', zValidator('json', HarvestSchema), async (c) => {
-    try {
-        const body = c.req.valid('json')
-        logger.info({ body }, 'Harvesting fees')
+  try {
+    const body = c.req.valid('json')
+    logger.info({ body }, 'Harvesting fees')
 
-        const result = await cetusService.executeHarvest(body)
+    const result = await cetusService.executeHarvest(body)
 
-        return c.json({
-            success: result.success,
-            data: result,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to harvest fees')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+    return c.json({
+      success: result.success,
+      data: result,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to harvest fees')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -251,20 +251,20 @@ cetusRouter.post('/harvest', zValidator('json', HarvestSchema), async (c) => {
 // ============================================================================
 
 cetusRouter.post('/zap/build', zValidator('json', ZapBuildSchema), async (c) => {
-    try {
-        const body = c.req.valid('json')
-        logger.info({ body }, 'Building zap transaction')
+  try {
+    const body = c.req.valid('json')
+    logger.info({ body }, 'Building zap transaction')
 
-        const result = await cetusService.buildZapTx(body)
+    const result = await cetusService.buildZapTx(body)
 
-        return c.json({
-            success: true,
-            data: result,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to build zap transaction')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+    return c.json({
+      success: true,
+      data: result,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to build zap transaction')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -273,20 +273,20 @@ cetusRouter.post('/zap/build', zValidator('json', ZapBuildSchema), async (c) => 
 // ============================================================================
 
 cetusRouter.post('/harvest/build', zValidator('json', HarvestBuildSchema), async (c) => {
-    try {
-        const body = c.req.valid('json')
-        logger.info({ body }, 'Building harvest transaction')
+  try {
+    const body = c.req.valid('json')
+    logger.info({ body }, 'Building harvest transaction')
 
-        const result = await cetusService.buildHarvestTx(body)
+    const result = await cetusService.buildHarvestTx(body)
 
-        return c.json({
-            success: true,
-            data: result,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to build harvest transaction')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+    return c.json({
+      success: true,
+      data: result,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to build harvest transaction')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -295,20 +295,20 @@ cetusRouter.post('/harvest/build', zValidator('json', HarvestBuildSchema), async
 // ============================================================================
 
 cetusRouter.post('/zap/quote', zValidator('json', ZapQuoteSchema), async (c) => {
-    try {
-        const body = c.req.valid('json')
-        logger.info({ body }, 'Getting zap quote')
+  try {
+    const body = c.req.valid('json')
+    logger.info({ body }, 'Getting zap quote')
 
-        const result = await cetusService.getZapQuote(body)
+    const result = await cetusService.getZapQuote(body)
 
-        return c.json({
-            success: true,
-            data: result,
-        })
-    } catch (error) {
-        logger.error({ error }, 'Failed to get zap quote')
-        return c.json({ success: false, error: String(error) }, 500)
-    }
+    return c.json({
+      success: true,
+      data: result,
+    })
+  } catch (error) {
+    logger.error({ error }, 'Failed to get zap quote')
+    return c.json({ success: false, error: String(error) }, 500)
+  }
 })
 
 // ============================================================================
@@ -316,19 +316,23 @@ cetusRouter.post('/zap/quote', zValidator('json', ZapQuoteSchema), async (c) => 
 // Returns unsigned TX for removing liquidity from position
 // ============================================================================
 
-cetusRouter.post('/remove-liquidity/build', zValidator('json', RemoveLiquidityBuildSchema), async (c) => {
+cetusRouter.post(
+  '/remove-liquidity/build',
+  zValidator('json', RemoveLiquidityBuildSchema),
+  async (c) => {
     try {
-        const body = c.req.valid('json')
-        logger.info({ body }, 'Building remove liquidity transaction')
+      const body = c.req.valid('json')
+      logger.info({ body }, 'Building remove liquidity transaction')
 
-        const result = await cetusService.buildRemoveLiquidityTx(body)
+      const result = await cetusService.buildRemoveLiquidityTx(body)
 
-        return c.json({
-            success: true,
-            data: result,
-        })
+      return c.json({
+        success: true,
+        data: result,
+      })
     } catch (error) {
-        logger.error({ error }, 'Failed to build remove liquidity transaction')
-        return c.json({ success: false, error: String(error) }, 500)
+      logger.error({ error }, 'Failed to build remove liquidity transaction')
+      return c.json({ success: false, error: String(error) }, 500)
     }
-})
+  }
+)

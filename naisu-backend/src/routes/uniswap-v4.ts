@@ -311,11 +311,15 @@ uniswapV4Router.get('/contract/owner', async (c) => {
  */
 uniswapV4Router.get('/addresses', async (c) => {
   const { getContractAddresses } = await import('@lib/evm-client')
+  const { config } = await import('@config/env')
   const addresses = getContractAddresses()
 
   return c.json({
     success: true,
-    data: addresses,
+    data: {
+      ...addresses,
+      chain: config.evm.network,
+    },
   })
 })
 

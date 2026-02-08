@@ -33,6 +33,30 @@ const corsOrigins = config.cors.origin
   .filter(Boolean)
 const allowAllOrigins = corsOrigins.includes('*')
 
+function parseOrigin(origin: string): string | null {
+  try {
+    return new URL(origin).origin
+  } catch {
+    return null
+  }
+}
+
+function canonicalOrigin(origin: string): string | null {
+  const parsed = parseOrigin(origin)
+  if (!parsed) return null
+  const url = new URL(parsed)
+  if (url.hostname.startsWith('www.')) {
+    url.hostname = url.hostname.slice(4)
+  }
+  return url.origin
+}
+
+const allowedOrigins = new Set(corsOrigins)
+const allowedCanonicalOrigins = new Set(
+  corsOrigins.map(canonicalOrigin).filter((origin): origin is string => Boolean(origin))
+)
+const hardcodedAllowedHosts = new Set(['naisu.one', 'www.naisu.one', 'naisu1-beta.vercel.app'])
+
 // Global middleware
 app.use(requestId())
 app.use(secureHeaders())
@@ -46,14 +70,41 @@ app.use(
       if (!requestOrigin) {
         return corsOrigins[0] || ''
       }
-      return corsOrigins.includes(requestOrigin) ? requestOrigin : ''
+
+      const parsed = parseOrigin(requestOrigin)
+      const canonical = canonicalOrigin(requestOrigin)
+      if (
+        allowedOrigins.has(requestOrigin) ||
+        (parsed !== null && allowedOrigins.has(parsed)) ||
+        (canonical !== null && allowedCanonicalOrigins.has(canonical))
+      ) {
+        return requestOrigin
+      }
+
+      // Safety net for official frontend domains if env is missing one variant.
+      if (parsed) {
+        const url = new URL(parsed)
+        if (url.protocol === 'https:' && hardcodedAllowedHosts.has(url.hostname)) {
+          return requestOrigin
+        }
+      }
+
+      // If no match, return the first allowed origin or allow all if configured
+      return allowAllOrigins ? requestOrigin || '*' : corsOrigins[0] || requestOrigin || '*'
     },
-    allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+    allowMethods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE', 'PATCH'],
+    allowHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'X-Requested-With'],
+    exposeHeaders: ['Content-Length', 'X-Request-Id'],
     credentials: true,
+    maxAge: 86400,
   })
 )
 app.use(prettyJSON())
+
+// Handle OPTIONS preflight requests explicitly
+app.options('*', (c) => {
+  return c.body(null, 204)
+})
 
 // Request logging
 app.use('*', async (c, next) => {

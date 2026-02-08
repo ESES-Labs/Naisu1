@@ -21,6 +21,12 @@ declare global {
       // EVM
       BASE_SEPOLIA_RPC?: string
       BASE_SEPOLIA_CHAIN_ID?: string
+      BASE_MAINNET_RPC?: string
+      BASE_MAINNET_CHAIN_ID?: string
+      EVM_NETWORK?: 'base-sepolia' | 'base'
+      NAISU_SWAP_CONTRACT?: string
+      NAISU_REWARDS_CONTRACT?: string
+      POOL_MANAGER?: string
       EVM_ADMIN_PRIVATE_KEY?: string
 
       // Wormhole CCTP

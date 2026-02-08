@@ -36,6 +36,7 @@ const envSchema = z.object({
   // EVM - Base Mainnet (Production)
   BASE_MAINNET_RPC: z.string().url().default('https://mainnet.base.org'),
   BASE_MAINNET_CHAIN_ID: z.string().default('8453'),
+  EVM_NETWORK: z.enum(['base-sepolia', 'base']).default('base-sepolia'),
 
   // EVM Admin (for write operations - optional)
   EVM_ADMIN_PRIVATE_KEY: z
@@ -132,10 +133,12 @@ export const config = {
 
   // EVM (Base)
   evm: {
-    rpcUrl: isProd ? env.BASE_MAINNET_RPC : env.BASE_SEPOLIA_RPC,
-    chainId: isProd
-      ? parseInt(env.BASE_MAINNET_CHAIN_ID, 10)
-      : parseInt(env.BASE_SEPOLIA_CHAIN_ID, 10),
+    network: env.EVM_NETWORK,
+    rpcUrl: env.EVM_NETWORK === 'base' ? env.BASE_MAINNET_RPC : env.BASE_SEPOLIA_RPC,
+    chainId:
+      env.EVM_NETWORK === 'base'
+        ? parseInt(env.BASE_MAINNET_CHAIN_ID, 10)
+        : parseInt(env.BASE_SEPOLIA_CHAIN_ID, 10),
     fallbackRpcUrl: env.EVM_FALLBACK_RPC_URL,
     adminPrivateKey: env.EVM_ADMIN_PRIVATE_KEY,
     contracts: {

@@ -25,6 +25,10 @@ export const supportedChains = {
 
 export type SupportedChain = keyof typeof supportedChains
 
+function getConfiguredChain() {
+  return config.evm.network === 'base' ? base : baseSepolia
+}
+
 // ============================================================================
 // Public Client (Read-only)
 // ============================================================================
@@ -41,7 +45,7 @@ export function getPublicClient(): PublicClient {
     transports.push(http(config.evm.fallbackRpcUrl))
   }
 
-  const chain = config.server.isProd ? base : baseSepolia
+  const chain = getConfiguredChain()
 
   publicClient = createPublicClient({
     chain,
@@ -68,7 +72,7 @@ export function getWalletClient(): WalletClient | null {
   }
 
   try {
-    const chain = config.server.isProd ? base : baseSepolia
+    const chain = getConfiguredChain()
 
     walletClient = createWalletClient({
       chain,
