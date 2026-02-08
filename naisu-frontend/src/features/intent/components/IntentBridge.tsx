@@ -12,10 +12,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useCreateSuiIntent } from '../hooks/sui/useCreateSuiIntent'
 import { useCreateEvmIntent } from '../hooks/evm/useCreateEvmIntent'
-import { useMintMockUsdc } from '../hooks/evm/useMintMockUsdc'
+
 import { useAuctionQuote } from '../hooks/useAuctionQuote'
 import { useCurrentAccount as useSuiAccount, useSuiClientQuery } from '@mysten/dapp-kit'
-import { useAccount } from 'wagmi'
+import { useAccount, useBalance } from 'wagmi'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowDown,
@@ -42,6 +42,12 @@ const USDC_ADDRESS = import.meta.env.VITE_EVM_USDC_ADDRESS as `0x${string}`;
 
 type Direction = 'evm_to_sui' | 'sui_to_evm'
 
+const ChainBadge = ({ chain }: { chain: 'BASE' | 'SUI' }) => (
+    <div className={`absolute -bottom-1 -right-1 px-1 rounded-sm text-[8px] font-bold text-white border border-[#131a2a] ${chain === 'BASE' ? 'bg-blue-600' : 'bg-cyan-500'}`}>
+        {chain}
+    </div>
+)
+
 export function IntentBridge() {
     const { address: evmAddress } = useAccount()
     const suiAccount = useSuiAccount()
@@ -51,11 +57,7 @@ export function IntentBridge() {
     const createEvmIntent = useCreateEvmIntent(BRIDGE_ADDRESS, USDC_ADDRESS)
     const { addTransaction } = useIntentHistory()
 
-    const {
-        mint: mintUsdc,
-        isPending: isMinting,
-        isConfirming: isMintConfirming
-    } = useMintMockUsdc()
+
 
     // ─── State ─────────────────────────────────────────────────────────────────
 
@@ -86,6 +88,18 @@ export function IntentBridge() {
         const bal = parseFloat(formatUnits(createEvmIntent.balance, 6))
         return bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }, [createEvmIntent.balance])
+
+
+    // EVM Native ETH Balance
+    const { data: ethBalanceData } = useBalance({
+        address: evmAddress,
+    })
+
+    const ethBalance = useMemo(() => {
+        if (!ethBalanceData) return '0.00'
+        const bal = parseFloat(formatUnits(ethBalanceData.value, ethBalanceData.decimals))
+        return bal.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+    }, [ethBalanceData])
 
     // Current Source Balance based on direction
     const sourceBalance = direction === 'evm_to_sui' ? usdcBalance : suiBalance;
@@ -370,8 +384,11 @@ export function IntentBridge() {
                                 style={{ appearance: 'none' }}
                             />
 
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 shrink-0 ${sourceToken === 'SUI' ? 'bg-indigo-500/10' : 'bg-cyan-500/10'}`}>
-                                <div className={`w-6 h-6 rounded-full ${sourceToken === 'SUI' ? 'bg-indigo-500' : 'bg-cyan-500'}`} />
+                            <div className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 shrink-0 ${sourceToken === 'SUI' ? 'bg-indigo-500/10' : 'bg-cyan-500/10'}`}>
+                                <div className="relative">
+                                    <div className={`w-6 h-6 rounded-full ${sourceToken === 'SUI' ? 'bg-indigo-500' : 'bg-cyan-500'}`} />
+                                    <ChainBadge chain={direction === 'sui_to_evm' ? 'SUI' : 'BASE'} />
+                                </div>
                                 <span className="text-lg font-semibold text-white">{sourceToken}</span>
                                 <ChevronDown className="h-4 w-4 text-white/50" />
                             </div>
@@ -402,7 +419,7 @@ export function IntentBridge() {
                             <span>You Receive</span>
                             {/* Destination balance could be fetched but usually less critical for "You Receive" input context unless it's a swap to existing. 
                             For now, keep simple or use opposite balance if connected. */}
-                            <span>Balance: {direction === 'evm_to_sui' ? suiBalance : usdcBalance}</span>
+                            <span>Balance: {direction === 'evm_to_sui' ? suiBalance : ethBalance}</span>
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -413,8 +430,11 @@ export function IntentBridge() {
                                 className={`w-full bg-transparent text-4xl font-medium placeholder-white/20 outline-none cursor-default ${isQuoteLoading ? 'text-white/30 animate-pulse' : 'text-white/60'}`}
                             />
 
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-default border border-transparent shrink-0 ${destToken === 'SUI' ? 'bg-indigo-500/10' : 'bg-white/5'}`}>
-                                <div className={`w-6 h-6 rounded-full ${destToken === 'SUI' ? 'bg-indigo-500' : 'bg-slate-200'}`} />
+                            <div className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full cursor-default border border-transparent shrink-0 ${destToken === 'SUI' ? 'bg-indigo-500/10' : 'bg-white/5'}`}>
+                                <div className="relative">
+                                    <div className={`w-6 h-6 rounded-full ${destToken === 'SUI' ? 'bg-indigo-500' : 'bg-slate-200'}`} />
+                                    <ChainBadge chain={direction === 'evm_to_sui' ? 'SUI' : 'BASE'} />
+                                </div>
                                 <span className="text-lg font-semibold text-white">{destToken}</span>
                             </div>
                         </div>
@@ -517,29 +537,18 @@ export function IntentBridge() {
                 </CardContent>
             </Card>
 
-            {/* Dev Tools: Mint USDC */}
+            {/* Dev Tools: Link to Circle Faucet */}
             {direction === 'evm_to_sui' && isConnected && (
-                <div className="flex justify-center">
-                    <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            if (evmAddress) mintUsdc(evmAddress);
-                        }}
-                        disabled={isMinting || isMintConfirming}
-                        className="text-xs text-white/30 hover:text-indigo-400 transition-colors flex items-center gap-1 group"
+                <div className="flex justify-center text-xs text-white/30 gap-1">
+                    <span>Need testnet USDC?</span>
+                    <a
+                        href="https://faucet.circle.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-400 hover:text-indigo-300 transition-colors underline"
                     >
-                        {isMinting ? (
-                            <>
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                Minting Test USDC...
-                            </>
-                        ) : (
-                            <>
-                                <span>Want to test?</span>
-                                <span className="underline group-hover:no-underline">Mint 1000 Mock USDC</span>
-                            </>
-                        )}
-                    </button>
+                        Get from Circle Faucet
+                    </a>
                 </div>
             )}
         </div>
