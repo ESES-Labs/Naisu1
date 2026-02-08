@@ -127,7 +127,7 @@ async function readPoolSlot0(
       protocolFee: Number(protocolFee),
       swapFee: Number(swapFee),
     }
-  } catch (_error) {
+  } catch {
     // Fallback to raw storage decode for PoolManager variants that don't expose helpers.
     const stateSlot = getPoolStateSlot(poolId)
     const dataHex = (await poolManager.read.extsload([stateSlot])) as `0x${string}`
@@ -148,7 +148,7 @@ async function readPoolLiquidity(
 ): Promise<bigint> {
   try {
     return (await poolManager.read.getLiquidity([poolId])) as bigint
-  } catch (_error) {
+  } catch {
     const stateSlot = BigInt(getPoolStateSlot(poolId))
     const liquiditySlot = toHex(stateSlot + LIQUIDITY_OFFSET, { size: 32 })
     const dataHex = (await poolManager.read.extsload([liquiditySlot])) as `0x${string}`
@@ -814,6 +814,7 @@ export async function buildSwapTransaction(params: {
     tokenOut,
     amountIn,
     minAmountOut,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     fee = DEFAULT_FEE,
     deadlineSeconds = 3600,
   } = params
