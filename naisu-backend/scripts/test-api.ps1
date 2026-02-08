@@ -4,7 +4,7 @@
 #
 
 param(
-    [string]$BaseUrl = "http://localhost:8080"
+    [string]$BaseUrl = "http://localhost:3000"
 )
 
 $ErrorActionPreference = "Continue"

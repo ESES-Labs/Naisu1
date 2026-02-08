@@ -1,0 +1,23 @@
+[Unit]
+Description=Naisu Backend Webhook Deployment Server
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/naisu-backend
+Environment="WEBHOOK_PORT=9000"
+Environment="WEBHOOK_SECRET=your-webhook-secret-here"
+Environment="DEPLOY_PATH=/opt/naisu-backend"
+Environment="DOCKER_USERNAME=your-docker-username"
+Environment="HEALTH_CHECK_URL=http://localhost:3000/api/v1/health"
+Environment="ALLOWED_IPS=140.82.112.0/20,192.30.252.0/22,185.199.108.0/22"  # GitHub Actions IPs
+ExecStart=/usr/local/bin/bun run /opt/naisu-backend/scripts/webhook-server.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

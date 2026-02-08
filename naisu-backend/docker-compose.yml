@@ -1,0 +1,159 @@
+# =============================================================================
+# Naisu Backend - Docker Compose Configuration
+# For VPS deployment with optional PostgreSQL
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # Main Application
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: naisu-backend-api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      # Server
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      HOST: 0.0.0.0
+      
+      # Database (uses internal Docker network)
+      DATABASE_URL: ${DATABASE_URL:-postgresql://naisu:naisu_password@postgres:5432/naisu_backend}
+      
+      # CORS
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      
+      # EVM Configuration
+      BASE_SEPOLIA_RPC: ${BASE_SEPOLIA_RPC:-https://sepolia.base.org}
+      BASE_SEPOLIA_CHAIN_ID: ${BASE_SEPOLIA_CHAIN_ID:-84532}
+      BASE_MAINNET_RPC: ${BASE_MAINNET_RPC:-https://mainnet.base.org}
+      BASE_MAINNET_CHAIN_ID: ${BASE_MAINNET_CHAIN_ID:-8453}
+      EVM_ADMIN_PRIVATE_KEY: ${EVM_ADMIN_PRIVATE_KEY:-}
+      EVM_FALLBACK_RPC_URL: ${EVM_FALLBACK_RPC_URL:-}
+      
+      # Contracts
+      NAISU_SWAP_CONTRACT: ${NAISU_SWAP_CONTRACT:-0xd102861878FF7d241c50fc6Ca2f599710E69ddFf}
+      NAISU_REWARDS_CONTRACT: ${NAISU_REWARDS_CONTRACT:-0x0FB3da1B4133EcCAE050aBFA76998fE4768ae287}
+      POOL_MANAGER: ${POOL_MANAGER:-0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408}
+      
+      # Features
+      ENABLE_UNISWAP_V4: ${ENABLE_UNISWAP_V4:-true}
+      
+      # Redis (optional)
+      REDIS_URL: ${REDIS_URL:-}
+      
+      # Security
+      API_KEY_HEADER: ${API_KEY_HEADER:-x-api-key}
+    networks:
+      - naisu-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3000/api/v1/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database (Optional - remove if using external DB)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: naisu-backend-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: naisu
+      POSTGRES_PASSWORD: naisu_password
+      POSTGRES_DB: naisu_backend
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"  # Expose only if you need external access
+    networks:
+      - naisu-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U naisu -d naisu_backend"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Redis Cache (Optional - uncomment if needed)
+  # ---------------------------------------------------------------------------
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: naisu-backend-redis
+  #   restart: unless-stopped
+  #   command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+  #   volumes:
+  #     - redis_data:/data
+  #   ports:
+  #     - "6379:6379"
+  #   networks:
+  #     - naisu-network
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.25'
+  #         memory: 128M
+
+# ---------------------------------------------------------------------------
+# Networks
+# ---------------------------------------------------------------------------
+networks:
+  naisu-network:
+    driver: bridge
+
+# ---------------------------------------------------------------------------
+# Volumes
+# ---------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+  # redis_data:
+  #   driver: local

@@ -6,7 +6,7 @@
 
 set -e
 
-BASE_URL="${BASE_URL:-http://localhost:8080}"
+BASE_URL="${BASE_URL:-http://localhost:3000}"
 
 echo "🧪 Testing Uniswap V4 API at $BASE_URL"
 echo "=========================================="
