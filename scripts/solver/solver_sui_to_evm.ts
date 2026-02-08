@@ -106,6 +106,23 @@ async function processIntent(args: any) {
 
         const recipientAddress = vectorToEvmAddress(recipient_evm);
 
+        // 0. CHECK STATUS (Existence Check)
+        console.log(`   🔎 Checking status for Intent ID: ${intent_id}...`);
+        try {
+            const objectInfo = await suiClient.getObject({
+                id: intent_id,
+                options: { showOwner: true } // Minimal fetch
+            });
+
+            if (objectInfo.error || !objectInfo.data) {
+                console.log(`   ⏭️ Intent ${intent_id} not found or deleted (Settled). Skipping.`);
+                return;
+            }
+        } catch (e) {
+            console.log(`   ⏭️ Error fetching intent ${intent_id} (likely deleted). Skipping.`);
+            return;
+        }
+
         console.log(`   Creator: ${creator}`);
         console.log(`   Input (SUI): ${formatUnits(BigInt(sui_amount), 9)}`);
 

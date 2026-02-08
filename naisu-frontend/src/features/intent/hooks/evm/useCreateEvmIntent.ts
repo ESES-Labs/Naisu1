@@ -9,6 +9,21 @@ const EVM_INTENT_BRIDGE_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export const INTENT_BRIDGE_ABI = [
     {
+        "anonymous": false,
+        "inputs": [
+            { "indexed": true, "internalType": "uint256", "name": "orderId", "type": "uint256" },
+            { "indexed": true, "internalType": "address", "name": "depositor", "type": "address" },
+            { "indexed": false, "internalType": "uint256", "name": "inputAmount", "type": "uint256" },
+            { "indexed": false, "internalType": "uint256", "name": "startOutputAmount", "type": "uint256" },
+            { "indexed": false, "internalType": "uint256", "name": "minOutputAmount", "type": "uint256" },
+            { "indexed": false, "internalType": "uint256", "name": "startTime", "type": "uint256" },
+            { "indexed": false, "internalType": "uint256", "name": "duration", "type": "uint256" },
+            { "indexed": false, "internalType": "bytes32", "name": "recipientSui", "type": "bytes32" }
+        ],
+        "name": "OrderCreated",
+        "type": "event"
+    },
+    {
         "inputs": [
             { "internalType": "uint256", "name": "inputAmount", "type": "uint256" },
             { "internalType": "uint256", "name": "startOutputAmount", "type": "uint256" },
@@ -40,6 +55,7 @@ export function useCreateEvmIntent(
     // Parse OrderCreated event
     useEffect(() => {
         if (isConfirmed && receipt) {
+            console.log("Tx Confirmed! Parsing Logs...", receipt.logs);
             // Find logs that match
             // Event OrderCreated(uint256 indexed orderId, ...)
             // We use viem's decodeEventLog or rely on the fact that we know the ABI
@@ -53,6 +69,7 @@ export function useCreateEvmIntent(
                             topics: log.topics,
                         });
                         if (decoded.eventName === 'OrderCreated') {
+                            console.log("Found OrderCreated Event:", decoded);
                             const args = decoded.args as any;
                             setOrderId(args.orderId.toString());
                             break;
@@ -85,7 +102,11 @@ export function useCreateEvmIntent(
     // Refetch allowance when approval confirms
     useEffect(() => {
         if (isApproved) {
+            console.log("Approval confirmed, refetching allowance...");
             refetchAllowance();
+            // Retry after delays to handle RPC propagation lag
+            setTimeout(() => { console.log("Refetching allowance (1s)..."); refetchAllowance(); }, 1000);
+            setTimeout(() => { console.log("Refetching allowance (3s)..."); refetchAllowance(); }, 3000);
         }
     }, [isApproved, refetchAllowance]);
 

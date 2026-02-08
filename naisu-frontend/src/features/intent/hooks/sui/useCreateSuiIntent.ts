@@ -3,7 +3,7 @@ import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@
 import { Transaction } from '@mysten/sui/transactions';
 
 // Hardcoded for now, should ideally come from env or config
-const INTENT_PACKAGE_ID = '0x17d69de7bf3314544d65112bd7dcce87600859599d12e411b6a7493b827e8d69';
+const INTENT_PACKAGE_ID = '0xd37320c6f09b433003d383aca5f7069d917caed77a280cb07427c915e051f0e2';
 const CLOCK_OBJECT_ID = '0x6';
 
 export interface CreateSuiIntentParams {

@@ -81,9 +81,44 @@ async function main() {
     }
 }
 
+const ORDERS_ABI = [
+    {
+        "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "name": "orders",
+        "outputs": [
+            { "internalType": "address", "name": "depositor", "type": "address" },
+            { "internalType": "uint256", "name": "inputAmount", "type": "uint256" },
+            { "internalType": "bytes32", "name": "recipientSui", "type": "bytes32" },
+            { "internalType": "uint256", "name": "startOutputAmount", "type": "uint256" },
+            { "internalType": "uint256", "name": "minOutputAmount", "type": "uint256" },
+            { "internalType": "uint256", "name": "startTime", "type": "uint256" },
+            { "internalType": "uint256", "name": "duration", "type": "uint256" },
+            { "internalType": "uint8", "name": "status", "type": "uint8" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+] as const;
+
 async function processOrder(args: any, txHash: string) {
     try {
         const { orderId, depositor, inputAmount, startOutputAmount, minOutputAmount, startTime, duration, recipientSui } = args;
+
+        // 0. CHECK STATUS FIRST
+        console.log(`   🔎 Checking status for Order ID: ${orderId}...`);
+        const orderData = await evmPublicClient.readContract({
+            address: EVM_INTENT_BRIDGE_ADDRESS,
+            abi: ORDERS_ABI,
+            functionName: 'orders',
+            args: [orderId]
+        });
+
+        // @ts-ignore
+        const status = orderData[7]; // 8th element is status (enum)
+        if (status !== 0) { // 0 = PENDING
+            console.log(`   ⏭️ Order ${orderId} is NOT Pending (Status: ${status}). Skipping.`);
+            return;
+        }
 
         console.log(`   Depositor: ${depositor}`);
         console.log(`   Input (USDC): ${formatUnits(inputAmount, 6)}`);

@@ -23,13 +23,12 @@ import {
     Loader2,
     ChevronDown,
     Info,
-    History,
-    ExternalLink,
     CheckCircle2,
     XCircle
 } from 'lucide-react'
-import { parseUnits, formatUnits } from 'viem'
+import { parseUnits } from 'viem'
 import { useIntentHistory } from '../hooks/useIntentHistory'
+import { ActivityDrawer } from './history/ActivityDrawer'
 
 // Mock Oracle Prices (In real app, fetch from checking API)
 const PRICES: Record<string, number> = {
@@ -51,7 +50,7 @@ export function IntentBridge() {
     // Custom Hooks
     const createSuiIntent = useCreateSuiIntent()
     const createEvmIntent = useCreateEvmIntent(BRIDGE_ADDRESS, USDC_ADDRESS)
-    const { addIntent, intents } = useIntentHistory()
+    const { addTransaction } = useIntentHistory()
 
     // ─── State ─────────────────────────────────────────────────────────────────
 
@@ -65,18 +64,22 @@ export function IntentBridge() {
     // Effect to save EVM intent when orderId is confirmed
     useEffect(() => {
         if (createEvmIntent.orderId && pendingIntentRef.current) {
-            addIntent({
-                id: createEvmIntent.orderId,
+            addTransaction({
+                id: crypto.randomUUID(), // Generate local UUID
+                orderId: createEvmIntent.orderId,
                 type: 'EVM_TO_SUI',
-                amountIn: pendingIntentRef.current.amount,
-                tokenIn: 'USDC',
-                tokenOut: 'SUI',
+                inputAmount: pendingIntentRef.current.amount,
+                inputToken: 'USDC',
+                outputToken: 'SUI',
+                expectedOutput: '0', // Need capture expected output or refetch? PendingRef needs this.
                 recipient: pendingIntentRef.current.recipient,
                 txHash: createEvmIntent.txHash || '',
+                status: 'PENDING',
+                timestamp: Date.now()
             });
             pendingIntentRef.current = null; // Reset
         }
-    }, [createEvmIntent.orderId, addIntent, createEvmIntent.txHash]);
+    }, [createEvmIntent.orderId, addTransaction, createEvmIntent.txHash]);
 
     // Settings State
     const [durationIdx, setDurationIdx] = useState(1) // 0: 10m, 1: 30m, 2: 1h
@@ -141,11 +144,6 @@ export function IntentBridge() {
         setAmount('') // simple reset
     }
 
-    const handleMax = () => {
-        // Logic to set max balance would go here
-        setAmount('10') // Dummy max
-    }
-
     const handleApprove = async () => {
         if (!amount) return;
         await createEvmIntent.approve(amount);
@@ -185,14 +183,18 @@ export function IntentBridge() {
 
                 // Save to history immediately for Sui
                 if (res.intentId) {
-                    addIntent({
-                        id: res.intentId,
+                    addTransaction({
+                        id: crypto.randomUUID(), // Generate local UUID
+                        orderId: res.intentId,
                         type: 'SUI_TO_EVM',
-                        amountIn: amount,
-                        tokenIn: 'SUI',
-                        tokenOut: 'ETH',
+                        inputAmount: amount,
+                        inputToken: 'SUI',
+                        outputToken: 'ETH',
+                        expectedOutput: minAmount,
                         recipient: recipient,
                         txHash: res.digest,
+                        status: 'PENDING',
+                        timestamp: Date.now()
                     });
                     pendingIntentRef.current = null;
                 }
@@ -227,59 +229,7 @@ export function IntentBridge() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button className="text-white/50 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5">
-                                    <History className="h-5 w-5" />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[320px] bg-[#131a2a] border-white/10 text-white p-0 rounded-xl shadow-xl backdrop-blur-3xl overflow-hidden">
-                                <div className="p-3 border-b border-white/10 text-sm font-semibold flex justify-between items-center bg-white/5">
-                                    <span>Recent Activity</span>
-                                    <span className="text-xs font-normal text-white/50">{intents.length} Transactions</span>
-                                </div>
-                                <div className="max-h-[300px] overflow-y-auto">
-                                    {intents.length === 0 ? (
-                                        <div className="p-8 text-center text-white/30 text-xs">
-                                            No recent transactions found.
-                                        </div>
-                                    ) : (
-                                        intents.map((intent, i) => (
-                                            <div key={`${intent.id}-${i}`} className="p-3 border-b border-white/5 hover:bg-white/5 transition-colors group">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className={`w-2 h-2 rounded-full ${intent.status === 'COMPLETED' ? 'bg-emerald-500' : intent.status === 'FAILED' ? 'bg-red-500' : 'bg-amber-500 animate-pulse'}`} />
-                                                        <span className="text-xs font-medium text-white/90">
-                                                            {intent.type === 'SUI_TO_EVM' ? 'SUI → ETH' : 'USDC → SUI'}
-                                                        </span>
-                                                    </div>
-                                                    {/* Simple localized time */}
-                                                    <span className="text-[10px] text-white/40 font-mono">
-                                                        {new Date(intent.timestamp).toLocaleTimeString()}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between items-center pl-4">
-                                                    <span className="text-xs text-white/60">
-                                                        {intent.amountIn} {intent.tokenIn}
-                                                    </span>
-                                                    <a
-                                                        href={intent.type === 'SUI_TO_EVM' ? `https://suiscan.xyz/testnet/tx/${intent.txHash}` : `https://sepolia.basescan.org/tx/${intent.txHash}`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="text-white/30 hover:text-white transition-colors"
-                                                    >
-                                                        <ExternalLink className="h-3 w-3" />
-                                                    </a>
-                                                </div>
-                                                <div className="pl-4 mt-1 text-[10px] text-white/30 font-mono flex gap-2">
-                                                    ID: {intent.id.slice(0, 6)}...{intent.id.slice(-4)}
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ActivityDrawer />
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
