@@ -1,0 +1,15 @@
+{
+  "name": "naisu-uniswapv4-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:base": "tsx scripts/base-sepolia-test.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "viem": "^2.45.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}
