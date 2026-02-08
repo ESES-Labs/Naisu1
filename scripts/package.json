@@ -5,8 +5,8 @@
   "scripts": {
     "solver:evm-to-sui": "bun run solver/solver_evm_to_sui.ts",
     "solver:sui-to-evm": "bun run solver/solver_sui_to_evm.ts",
-    "create-intent": "bun run create-intent.ts",
-    "create-order": "bun run create-order.ts"
+    "create-intent:sui-to-evm": "bun run create-intent-sui-to-evm.ts",
+    "create-intent:evm-to-sui": "bun run create-intent-evm-to-sui.ts"
   },
   "dependencies": {
     "@certusone/wormhole-sdk": "^0.10.18",
