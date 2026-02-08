@@ -42,7 +42,7 @@ const NETWORK_CONFIGS: Record<Network, NetworkConfig> = {
     network: 'testnet',
     rpcUrl: import.meta.env.VITE_TESTNET_RPC_URL || 'https://fullnode.testnet.sui.io:443',
     explorerUrl: import.meta.env.VITE_TESTNET_EXPLORER || 'https://suiscan.xyz/testnet',
-    intentPackage: import.meta.env.VITE_TESTNET_INTENT_PACKAGE || '0xa3a26135f436323ea0fe00330fbdcd188f2c07bf33a5ee4c49aa736cea88a71f',
+    intentPackage: import.meta.env.VITE_SUI_INTENT_PACKAGE_ID || '0xa3a26135f436323ea0fe00330fbdcd188f2c07bf33a5ee4c49aa736cea88a71f',
     protocolAddresses: {
       deepbook: {
         package: '0x000000000000000000000000000000000000000000000000000000000000dee9',

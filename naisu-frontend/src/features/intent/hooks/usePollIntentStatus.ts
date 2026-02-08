@@ -27,10 +27,10 @@ const INTENT_BRIDGE_ABI = [
     }
 ] as const;
 
-const BRIDGE_ADDRESS = '0xc7ECA6bb572aB9BFBa36F503D7c6c64b9fcFf2B4';
+const BRIDGE_ADDRESS = import.meta.env.VITE_EVM_BRIDGE_ADDRESS || '0xc7ECA6bb572aB9BFBa36F503D7c6c64b9fcFf2B4';
 
 // Hardcoded package ID (same as useCreateSuiIntent)
-const SUI_PACKAGE_ID = '0xd37320c6f09b433003d383aca5f7069d917caed77a280cb07427c915e051f0e2';
+const SUI_PACKAGE_ID = import.meta.env.VITE_SUI_BRIDGE_PACKAGE_ID || '0xd37320c6f09b433003d383aca5f7069d917caed77a280cb07427c915e051f0e2';
 
 export function usePollIntentStatus(transaction: IntentTransaction) {
     const { updateTransactionStatus } = useIntentHistory();
