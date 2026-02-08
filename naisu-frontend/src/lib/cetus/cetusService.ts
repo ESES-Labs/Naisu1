@@ -22,8 +22,10 @@ export const CETUS_CORE_PACKAGE =
 export const CETUS_GLOBAL_CONFIG =
   "0xc6273f844b4bc258952c4e477697aa12c918c8e08106fac6b934811298c9820a";
 
+// Factory Pools object — must match CORE package deployment (0x5372d555...)
+// Old value 0x50eb61dd... was from a DIFFERENT deployment and caused TypeMismatch
 export const CETUS_FACTORY =
-  "0x50eb61dd5928cec5ea04711a2e9b72e5237e79e9fbcd2ce3d5469dc8708e0ee2";
+  "0x20a086e6fa0741b3ca77d033a65faf0871349b986ddbdde6fa1d85d78a5f4222";
 
 // Clock
 export const SUI_CLOCK = "0x6";
@@ -48,6 +50,8 @@ export function tickToU32(tick: number): number {
 
 // Coin Types
 export const COIN_SUI = "0x2::sui::SUI";
+export const COIN_USDC_CIRCLE = "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC";
+export const COIN_USDC_CETUS = "0x14a71d857b34677a7d57e0feb303df1adb515a37780645ab763d42ce8d1a5e48::usdc::USDC";
 
 /**
  * Check if a coin type is SUI
@@ -116,7 +120,37 @@ export const CETUS_POOLS = {
     name: "SUI/USDC (Legacy)",
     isLegacy: true, // Flag to indicate this pool won't work
   },
+  // Circle USDC / SUI — native Circle USDC on testnet (tick_spacing 200, skewed price)
+  USDC_CIRCLE_SUI: {
+    id: "0xc0b2d0d3ef3851f176235953616cd7799bede294a828ce3871ef110447859a78",
+    coinA: COIN_USDC_CIRCLE,
+    coinB: COIN_SUI,
+    name: "USDC(Circle)/SUI [ts200]",
+  },
+  // Circle USDC / SUI — 1:1 price pool (tick_spacing 2)
+  USDC_CIRCLE_SUI_1TO1: {
+    id: "0x0b72395179f0f37759f9395ac2fb659bf2b924123864181161608d9dd1c5fa59",
+    coinA: COIN_USDC_CIRCLE,
+    coinB: COIN_SUI,
+    name: "USDC(Circle)/SUI [1:1]",
+  },
+  // Circle USDC / SUI — 1 SUI = 20 USDC pool (tick_spacing 10)
+  USDC_CIRCLE_SUI_20: {
+    id: "0x396d6233b42fb8a58004e937bd3e9b37bf2626e7074aab179fc0eb1d6487cfae",
+    coinA: COIN_USDC_CIRCLE,
+    coinB: COIN_SUI,
+    name: "USDC(Circle)/SUI [1:20]",
+  },
 };
+
+/**
+ * Get human-readable symbol for a coin type, labeling Circle USDC distinctly
+ */
+export function coinSymbol(coinType: string): string {
+  if (coinType === COIN_USDC_CIRCLE) return "USDC(Circle)";
+  if (coinType === COIN_USDC_CETUS) return "USDC(Cetus)";
+  return coinType.split("::").pop() || "?";
+}
 
 // === TYPES ===
 
@@ -243,13 +277,17 @@ export async function fetchPoolInfo(
 
     console.log("🔎 Extracted coin types:", { coinA, coinB });
 
+    // Convert u32 bits to signed i32 for currentTick
+    const rawBits = fields?.current_tick_index?.fields?.bits;
+    const currentTick = rawBits !== undefined && rawBits >= 2 ** 31 ? rawBits - 2 ** 32 : rawBits;
+
     return {
       id: poolId,
       coinA,
       coinB,
       name: "",
       tickSpacing: fields?.tick_spacing,
-      currentTick: fields?.current_tick_index?.fields?.bits,
+      currentTick,
       liquidity: fields?.liquidity,
       currentSqrtPrice: fields?.current_sqrt_price,
       isPause: fields?.is_pause,

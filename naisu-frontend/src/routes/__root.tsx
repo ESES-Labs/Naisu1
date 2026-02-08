@@ -84,6 +84,12 @@ function RootComponent() {
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <a href="/test-cetus-core" className="w-full cursor-pointer flex items-center gap-2">
+                    <div className="h-4 w-4 flex items-center justify-center rounded-full bg-indigo-500/20 text-[10px]">C</div>
+                    <span>CLMM Core Test</span>
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <a href="/test-open-position" className="w-full cursor-pointer flex items-center gap-2">
                     <div className="h-4 w-4 flex items-center justify-center rounded-full bg-emerald-500/20 text-[10px]">✨</div>
                     <span>Open Position (Clean)</span>
