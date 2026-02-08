@@ -141,6 +141,20 @@ export const CETUS_POOLS = {
     coinB: COIN_SUI,
     name: "USDC(Circle)/SUI [1:20]",
   },
+  // Circle USDC / SUI — tick_spacing 60 (empty, tick=0)
+  USDC_CIRCLE_SUI_TS60: {
+    id: "0x64a908fd79e89e05b85aa5de00f73250c67318c2c8578c0cc31a1c212257fa6b",
+    coinA: COIN_USDC_CIRCLE,
+    coinB: COIN_SUI,
+    name: "USDC(Circle)/SUI [ts60]",
+  },
+  // Circle USDC / SUI — 1 SUI = 200 USDC pool (tick_spacing 20)
+  USDC_CIRCLE_SUI_200: {
+    id: "0x1e8ade872bd43978dc2d4b35a9ddaf3ba3adc83df9e12f8c60ec116052f51cca",
+    coinA: COIN_USDC_CIRCLE,
+    coinB: COIN_SUI,
+    name: "USDC(Circle)/SUI [1:200]",
+  },
 };
 
 /**

@@ -1,0 +1,347 @@
+{
+	"info": {
+		"_postman_id": "naisu-cetus-api-v1",
+		"name": "Naisu Cetus API - Complete",
+		"description": "Complete API endpoints for Naisu Yield Platform\n\nIncludes:\n- Discovery & Pool Info\n- Balance & Coins\n- Quote/Preview\n- Build Unsigned TXs (for AI Agent)\n- Execute TXs (for Testing)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Discovery & Info",
+			"item": [
+				{
+					"name": "Get All Pools",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/pools",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "pools"]
+						},
+						"description": "List all available Cetus CLMM pools with metadata"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Pool Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/pool/{{POOL_ID}}",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "pool", "{{POOL_ID}}"]
+						},
+						"description": "Get detailed info for specific pool (current tick, liquidity, etc.)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Balance & Coins",
+			"item": [
+				{
+					"name": "Get Balance",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"owner\": \"{{USER_ADDRESS}}\",\n  \"coinType\": \"{{USDC_CIRCLE_TYPE}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/balance",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "balance"]
+						},
+						"description": "Check user's token balance for specific coin type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Coin Object IDs",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"owner\": \"{{USER_ADDRESS}}\",\n  \"coinType\": \"{{USDC_CIRCLE_TYPE}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/coins",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "coins"]
+						},
+						"description": "Get user's coin object IDs (needed for building transactions)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Positions",
+			"item": [
+				{
+					"name": "Get User Positions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"owner\": \"{{USER_ADDRESS}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/positions",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "positions"]
+						},
+						"description": "Get all LP positions owned by user"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Quote & Preview",
+			"item": [
+				{
+					"name": "Get Zap Quote",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"poolId\": \"{{POOL_ID}}\",\n  \"amountIn\": \"10\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/zap/quote",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "zap", "quote"]
+						},
+						"description": "Preview zap output before executing (shows expected liquidity, swap amounts, price impact)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Build Unsigned TXs (AI Agent)",
+			"item": [
+				{
+					"name": "Build Zap TX",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"poolId\": \"{{POOL_ID}}\",\n  \"coinObjectIds\": [\"{{COIN_OBJECT_ID}}\"],\n  \"amountIn\": \"5\",\n  \"userAddress\": \"{{USER_ADDRESS}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/zap/build",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "zap", "build"]
+						},
+						"description": "Build unsigned zap transaction. Takes coin object IDs as input. Returns TX bytes that user can sign with their wallet."
+					},
+					"response": []
+				},
+				{
+					"name": "Build Harvest TX",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionId\": \"{{POSITION_ID}}\",\n  \"userAddress\": \"{{USER_ADDRESS}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/harvest/build",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "harvest", "build"]
+						},
+						"description": "Build unsigned harvest transaction (collect trading fees from position)"
+					},
+					"response": []
+				},
+				{
+					"name": "Build Remove Liquidity TX",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionId\": \"{{POSITION_ID}}\",\n  \"liquidityDelta\": \"8649506\",\n  \"userAddress\": \"{{USER_ADDRESS}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/remove-liquidity/build",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "remove-liquidity", "build"]
+						},
+						"description": "Build unsigned remove liquidity transaction (withdraw from position)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. Execute TXs (Testing Only)",
+			"item": [
+				{
+					"name": "Execute Zap (Backend Signs)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"poolId\": \"{{POOL_ID}}\",\n  \"amountIn\": \"10\",\n  \"minLiquidity\": \"1000\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/zap",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "zap"]
+						},
+						"description": "Execute zap (backend signs with SUI_PRIVATE_KEY). For testing only!"
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Harvest (Backend Signs)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"positionId\": \"{{POSITION_ID}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/cetus/harvest",
+							"host": ["{{BASE_URL}}"],
+							"path": ["cetus", "harvest"]
+						},
+						"description": "Execute harvest (backend signs with SUI_PRIVATE_KEY). For testing only!"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/health",
+					"host": ["{{BASE_URL}}"],
+					"path": ["health"]
+				},
+				"description": "Check if backend is healthy"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "http://localhost:3001/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "PRODUCTION_URL",
+			"value": "http://43.156.16.9:3001/api/v1",
+			"type": "string",
+			"disabled": true
+		},
+		{
+			"key": "USER_ADDRESS",
+			"value": "0x087a53e32d9384d07de40d0100658c7eb01fd35130cab28580504b970a2d0a84",
+			"type": "string"
+		},
+		{
+			"key": "POOL_ID",
+			"value": "0x1e8ade872bd43978dc2d4b35a9ddaf3ba3adc83df9e12f8c60ec116052f51cca",
+			"type": "string"
+		},
+		{
+			"key": "USDC_CIRCLE_TYPE",
+			"value": "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC",
+			"type": "string"
+		},
+		{
+			"key": "COIN_OBJECT_ID",
+			"value": "0xb671c654b19b09d83054eb9220f5bb8b3605d2f271ff5def5bfacdc6f4023c90",
+			"type": "string"
+		},
+		{
+			"key": "POSITION_ID",
+			"value": "0x9e615a957bd7b2b932f25826c67f2f2e300d14bbf06766b00e01873e2aecf533",
+			"type": "string"
+		}
+	]
+}

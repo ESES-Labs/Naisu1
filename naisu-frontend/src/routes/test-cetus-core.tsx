@@ -375,6 +375,12 @@ function CetusCorePage() {
   const coinASymbol = poolInfoCache ? coinSymbol(poolInfoCache.coinA) : "CoinA";
   const coinBSymbol = poolInfoCache ? coinSymbol(poolInfoCache.coinB) : "CoinB";
 
+  // Resolve pool name from allPools list
+  const getPoolName = (poolId: string) => {
+    const found = allPools.find((p) => p.id === poolId);
+    return found ? found.name : null;
+  };
+
   // === SWAP ===
   const runSwap = async () => {
     if (!account) return toast.error("Connect wallet first");
@@ -1359,36 +1365,50 @@ function CetusCorePage() {
 
             {positions.length > 0 && (
               <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                {positions.map((pos) => (
-                  <div
-                    key={pos.id}
-                    onClick={() => {
-                      setPositionId(pos.id);
-                      setDeltaLiquidity(pos.liquidity);
-                    }}
-                    className={`p-2 rounded-lg cursor-pointer transition text-xs ${
-                      positionId === pos.id
-                        ? "bg-indigo-500/20 border border-indigo-500"
-                        : "bg-white/5 border border-white/10 hover:border-white/20"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-white font-mono">
-                        {pos.id.slice(0, 8)}...{pos.id.slice(-6)}
-                      </span>
-                      {positionId === pos.id && (
-                        <span className="text-indigo-400 text-[10px]">selected</span>
+                {positions.map((pos) => {
+                  const pName = getPoolName(pos.poolId);
+                  const tl = pos.tickLower >= 2 ** 31 ? pos.tickLower - 2 ** 32 : pos.tickLower;
+                  const tu = pos.tickUpper >= 2 ** 31 ? pos.tickUpper - 2 ** 32 : pos.tickUpper;
+                  return (
+                    <div
+                      key={pos.id}
+                      onClick={() => {
+                        setPositionId(pos.id);
+                        setDeltaLiquidity(pos.liquidity);
+                      }}
+                      className={`p-2 rounded-lg cursor-pointer transition text-xs ${
+                        positionId === pos.id
+                          ? "bg-indigo-500/20 border border-indigo-500"
+                          : "bg-white/5 border border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-mono">
+                            {pos.id.slice(0, 8)}...{pos.id.slice(-6)}
+                          </span>
+                          {pName && (
+                            <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">
+                              {pName}
+                            </span>
+                          )}
+                        </div>
+                        {positionId === pos.id && (
+                          <span className="text-indigo-400 text-[10px]">selected</span>
+                        )}
+                      </div>
+                      <div className="flex gap-3 mt-1 text-white/40">
+                        <span>liq: {pos.liquidity}</span>
+                        <span>ticks: [{tl}, {tu}]</span>
+                      </div>
+                      {!pName && (
+                        <div className="text-white/25 mt-0.5 truncate">
+                          pool: {pos.poolId.slice(0, 16)}...
+                        </div>
                       )}
                     </div>
-                    <div className="flex gap-3 mt-1 text-white/40">
-                      <span>liq: {pos.liquidity}</span>
-                      <span>ticks: [{pos.tickLower}, {pos.tickUpper}]</span>
-                    </div>
-                    <div className="text-white/25 mt-0.5 truncate">
-                      pool: {pos.poolId.slice(0, 16)}...
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -1438,33 +1458,45 @@ function CetusCorePage() {
 
             {positions.length > 0 && (
               <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                {positions.map((pos) => (
-                  <div
-                    key={pos.id}
-                    onClick={() => {
-                      setPositionId(pos.id);
-                      setDeltaLiquidity(pos.liquidity);
-                    }}
-                    className={`p-2 rounded-lg cursor-pointer transition text-xs ${
-                      positionId === pos.id
-                        ? "bg-indigo-500/20 border border-indigo-500"
-                        : "bg-white/5 border border-white/10 hover:border-white/20"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="text-white font-mono">
-                        {pos.id.slice(0, 8)}...{pos.id.slice(-6)}
-                      </span>
-                      {positionId === pos.id && (
-                        <span className="text-indigo-400 text-[10px]">selected</span>
-                      )}
+                {positions.map((pos) => {
+                  const pName = getPoolName(pos.poolId);
+                  const tl = pos.tickLower >= 2 ** 31 ? pos.tickLower - 2 ** 32 : pos.tickLower;
+                  const tu = pos.tickUpper >= 2 ** 31 ? pos.tickUpper - 2 ** 32 : pos.tickUpper;
+                  return (
+                    <div
+                      key={pos.id}
+                      onClick={() => {
+                        setPositionId(pos.id);
+                        setDeltaLiquidity(pos.liquidity);
+                      }}
+                      className={`p-2 rounded-lg cursor-pointer transition text-xs ${
+                        positionId === pos.id
+                          ? "bg-indigo-500/20 border border-indigo-500"
+                          : "bg-white/5 border border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-mono">
+                            {pos.id.slice(0, 8)}...{pos.id.slice(-6)}
+                          </span>
+                          {pName && (
+                            <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">
+                              {pName}
+                            </span>
+                          )}
+                        </div>
+                        {positionId === pos.id && (
+                          <span className="text-indigo-400 text-[10px]">selected</span>
+                        )}
+                      </div>
+                      <div className="flex gap-3 mt-1 text-white/40">
+                        <span>liq: {pos.liquidity}</span>
+                        <span>ticks: [{tl}, {tu}]</span>
+                      </div>
                     </div>
-                    <div className="flex gap-3 mt-1 text-white/40">
-                      <span>liq: {pos.liquidity}</span>
-                      <span>ticks: [{pos.tickLower}, {pos.tickUpper}]</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -1807,9 +1839,21 @@ function CetusCorePage() {
                 className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
               >
                 <option value="2">2 (0.01%)</option>
+                <option value="4">4 (0.02%)</option>
+                <option value="6">6 (0.03%)</option>
+                <option value="8">8 (0.04%)</option>
                 <option value="10">10 (0.05%)</option>
+                <option value="20">20 (0.1%)</option>
+                <option value="30">30 (0.15%)</option>
+                <option value="40">40 (0.2%)</option>
                 <option value="60">60 (0.25%)</option>
+                <option value="80">80 (0.3%)</option>
+                <option value="100">100 (0.4%)</option>
+                <option value="120">120 (0.6%)</option>
+                <option value="160">160 (0.8%)</option>
                 <option value="200">200 (1%)</option>
+                <option value="220">220 (2%)</option>
+                <option value="260">260 (4%)</option>
               </select>
             </div>
             <div className="col-span-2">
@@ -1849,6 +1893,7 @@ function CetusCorePage() {
                     { label: "1 SUI=$3", price: "0.003", desc: "1 SUI = 3 USDC" },
                     { label: "1 SUI=$5", price: "0.005", desc: "1 SUI = 5 USDC" },
                     { label: "1 SUI=$20", price: "0.02", desc: "1 SUI = 20 USDC" },
+                    { label: "1 SUI=$200", price: "0.2", desc: "1 SUI = 200 USDC" },
                   ].map((p) => (
                     <button
                       key={p.label}

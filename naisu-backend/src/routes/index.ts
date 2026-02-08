@@ -18,6 +18,7 @@ import { rateLimit } from '@middleware/rate-limit'
 // Routes
 import { healthRouter } from './health'
 import { uniswapV4Router } from './uniswap-v4'
+import { cetusRouter } from './cetus'
 import { docsRouter } from './docs'
 
 // ============================================================================
@@ -95,6 +96,9 @@ api.route('/health', healthRouter)
 
 // Uniswap V4 routes
 api.route('/uniswap-v4', uniswapV4Router)
+
+// Cetus CLMM routes (Sui)
+api.route('/cetus', cetusRouter)
 
 // API Docs (mounted at root level, not under /api/v1)
 app.route('/docs', docsRouter)
