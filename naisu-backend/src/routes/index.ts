@@ -1,0 +1,105 @@
+/**
+ * API Routes
+ * Hono router composition for Uniswap V4 Backend
+ */
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { prettyJSON } from 'hono/pretty-json'
+import { secureHeaders } from 'hono/secure-headers'
+import { requestId } from 'hono/request-id'
+
+import { config } from '@config/env'
+import { logger } from '@lib/logger'
+
+// Middleware
+import { errorHandler } from '@middleware/error-handler'
+import { rateLimit } from '@middleware/rate-limit'
+
+// Routes
+import { healthRouter } from './health'
+import { uniswapV4Router } from './uniswap-v4'
+import { docsRouter } from './docs'
+
+// ============================================================================
+// Main App
+// ============================================================================
+
+export const app = new Hono()
+
+// Global middleware
+app.use(requestId())
+app.use(secureHeaders())
+app.use(
+  cors({
+    origin: config.cors.origin,
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+)
+app.use(prettyJSON())
+
+// Request logging
+app.use('*', async (c, next) => {
+  const start = Date.now()
+  await next()
+  const duration = Date.now() - start
+
+  logger.info(
+    {
+      method: c.req.method,
+      path: c.req.path,
+      status: c.res.status,
+      duration: `${duration}ms`,
+      requestId: c.get('requestId'),
+    },
+    'Request completed'
+  )
+})
+
+// Global rate limiting
+app.use(
+  '*',
+  rateLimit({
+    windowMs: 60000,
+    maxRequests: 1000,
+  })
+)
+
+// Error handling
+app.onError(errorHandler)
+
+// ============================================================================
+// API Routes
+// ============================================================================
+
+const api = app.basePath('/api/v1')
+
+// Health check
+api.route('/health', healthRouter)
+
+// Uniswap V4 routes
+api.route('/uniswap-v4', uniswapV4Router)
+
+// API Docs (mounted at root level, not under /api/v1)
+app.route('/docs', docsRouter)
+
+// 404 handler
+api.notFound((c) => {
+  return c.json(
+    {
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: `Route ${c.req.method} ${c.req.path} not found`,
+      },
+    },
+    404
+  )
+})
+
+// ============================================================================
+// Type Exports (for Hono RPC client)
+// ============================================================================
+
+export type AppType = typeof app
