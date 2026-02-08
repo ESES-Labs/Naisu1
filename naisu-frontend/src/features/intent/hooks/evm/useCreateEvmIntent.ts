@@ -99,6 +99,18 @@ export function useCreateEvmIntent(
         }
     });
 
+    // Read Balance
+    const { data: balance, refetch: refetchBalance } = useReadContract({
+        address: usdcAddress,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: address ? [address] : undefined,
+        query: {
+            enabled: !!address && !!usdcAddress,
+            refetchInterval: 5000, // Poll every 5s
+        }
+    });
+
     // Refetch allowance when approval confirms
     useEffect(() => {
         if (isApproved) {
@@ -182,6 +194,8 @@ export function useCreateEvmIntent(
         txHash,
         approveHash,
         orderId, // Newly exposed
-        receipt
+        receipt,
+        balance,
+        refetchBalance
     };
 }

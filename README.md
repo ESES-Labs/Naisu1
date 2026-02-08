@@ -204,26 +204,20 @@ naisu1/
 
 ### 1. Setup Environment
 
-**Frontend:**
+**Frontend (`naisu-frontend`):**
 ```bash
-cd frontend
+cd naisu-frontend
 cp .env.example .env
-# Required:
-# VITE_SUI_NETWORK=testnet
-# VITE_TESTNET_INTENT_PACKAGE=0x...
+# Fill in your local configuration
 ```
 
-**Solver Agent:**
+**Solvers/Scripts (`scripts`):**
 ```bash
-cd naisu-agent
+cd scripts
 cp .env.example .env
-# Required for Verified Flow:
-# SUI_NETWORK=testnet
-
-# Optional (Untested/Experimental):
-# TESTNET_INTENT_PACKAGE=0x...
-# MAINNET_INTENT_PACKAGE=0x...
-# SOLVER_PRIVATE_KEY=...
+# Required for testing:
+# PRIVATE_KEY_EVM=...
+# PRIVATE_KEY_SUI=...
 ```
 
 ### 2. Run Solver Bots
@@ -439,6 +433,87 @@ incentive_v3::entry_deposit(
 ## 📝 License
 
 MIT
+
+---
+
+## 🌉 End-to-End Guide: Intent Bridge
+
+This guide documents how to manually test the Naisu Intent Bridge between Base Sepolia (EVM) and Sui Testnet found in this repo.
+
+### 1. Prerequisites (Wallets)
+
+1.  **EVM Wallet**: MetaMask installed (Network: **Base Sepolia**) with **ETH** for gas.
+2.  **Sui Wallet**: Sui Wallet installed (Network: **Testnet**) with **SUI** for gas.
+
+### 2. Environment Setup
+
+Before running tests, ensure you have configured the environment variables for both the frontend and the solver scripts.
+
+**Frontend Configuration:**
+```bash
+cd naisu-frontend
+cp .env.example .env
+# This file contains the contract addresses and RPC URLs for the UI.
+```
+
+**Scripts Configuration:**
+```bash
+cd scripts
+cp .env.example .env
+# You MUST provide PRIVATE_KEY_EVM and PRIVATE_KEY_SUI here.
+# These are used by the scripts to sign transactions as a solver.
+```
+
+### 3. Run the Solvers (Scripts)
+
+The Intent Bridge relies on off-chain solvers to listen for orders and fulfill them. You must run these scripts locally to simulate the solver network.
+
+**Terminal 1: EVM to Sui Solver**
+*(Listens for USDC deposits on Base, fulfills with SUI on Testnet)*
+```bash
+cd scripts
+bun install
+bun run solver:evm-to-sui
+```
+
+**Terminal 2: Sui to EVM Solver**
+*(Listens for SUI intents on Testnet, fulfills with ETH/USDC on Base)*
+```bash
+cd scripts
+bun run solver:sui-to-evm
+```
+
+### 4. Run the Frontend
+
+**Terminal 3: Frontend**
+```bash
+cd naisu-frontend
+bun install
+bun dev
+```
+Open [http://localhost:5173](http://localhost:5173).
+
+### 5. Execute Cross-Chain Swaps
+
+#### Direction A: Base Sepolia (EVM) → Sui
+1.  Connect **MetaMask** (Base Sepolia) and **Sui Wallet** (Testnet).
+2.  Navigate to the **Intent Bridge** tab.
+3.  Select **From: Base Sepolia** → **To: Sui**.
+4.  Enter Amount (e.g., `0.1` USDC).
+5.  **Approve USDC**: Click button → Confirm in MetaMask.
+6.  **Create Order**: Click button → Confirm in MetaMask.
+7.  **Watch Solvers**: Terminal 1 should log "Order Found" → "Solving...".
+8.  **Verify**: The UI will show "Matching Solver..." then "Completed". Click "View Destination Tx" to see the proof on Suiscan.
+
+#### Direction B: Sui → Base Sepolia (EVM)
+1.  Select **From: Sui** → **To: Base Sepolia**.
+2.  Enter Amount (e.g., `0.1` SUI).
+3.  **Create Intent**: Click button → Approve in Sui Wallet.
+4.  **Watch Solvers**: Terminal 2 should log "Intent Found" → "Solving...".
+5.  **Verify**: The UI status will update to "Completed" once the solver executes the fulfillment on Base.
+
+> [!IMPORTANT]
+> **Latency Note (Sui → EVM):** Wormhole VAAs for Sui → EVM can take a significant amount of time (often 10 minutes or more) to be signed by the Guardian network. During this period, the Activity History in the UI will continue to show "Matching Solver" while the solver waits for the VAA to be published. This is expected behavior due to Wormhole's finality requirements on Sui.
 
 ---
 

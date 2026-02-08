@@ -12,9 +12,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useCreateSuiIntent } from '../hooks/sui/useCreateSuiIntent'
 import { useCreateEvmIntent } from '../hooks/evm/useCreateEvmIntent'
+
 import { useAuctionQuote } from '../hooks/useAuctionQuote'
-import { useCurrentAccount as useSuiAccount } from '@mysten/dapp-kit'
-import { useAccount } from 'wagmi'
+import { useCurrentAccount as useSuiAccount, useSuiClientQuery } from '@mysten/dapp-kit'
+import { useAccount, useBalance } from 'wagmi'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowDown,
@@ -22,11 +23,9 @@ import {
     Wallet,
     Loader2,
     ChevronDown,
-    Info,
-    CheckCircle2,
-    XCircle
+    Info
 } from 'lucide-react'
-import { parseUnits } from 'viem'
+import { parseUnits, formatUnits } from 'viem'
 import { useIntentHistory } from '../hooks/useIntentHistory'
 import { ActivityDrawer } from './history/ActivityDrawer'
 
@@ -38,10 +37,16 @@ const PRICES: Record<string, number> = {
 }
 
 // Contract Addresses
-const BRIDGE_ADDRESS = '0xc7ECA6bb572aB9BFBa36F503D7c6c64b9fcFf2B4' // EVM_INTENT_VAULT
-const USDC_ADDRESS = '0xF06055B3e8874b1361Dd41d92836Ab7f18f8Bc90'   // MOCK_USDC
+const BRIDGE_ADDRESS = import.meta.env.VITE_EVM_BRIDGE_ADDRESS as `0x${string}`;
+const USDC_ADDRESS = import.meta.env.VITE_EVM_USDC_ADDRESS as `0x${string}`;
 
 type Direction = 'evm_to_sui' | 'sui_to_evm'
+
+const ChainBadge = ({ chain }: { chain: 'BASE' | 'SUI' }) => (
+    <div className={`absolute -bottom-1 -right-1 px-1 rounded-sm text-[8px] font-bold text-white border border-[#131a2a] ${chain === 'BASE' ? 'bg-blue-600' : 'bg-cyan-500'}`}>
+        {chain}
+    </div>
+)
 
 export function IntentBridge() {
     const { address: evmAddress } = useAccount()
@@ -52,11 +57,52 @@ export function IntentBridge() {
     const createEvmIntent = useCreateEvmIntent(BRIDGE_ADDRESS, USDC_ADDRESS)
     const { addTransaction } = useIntentHistory()
 
+
+
     // ─── State ─────────────────────────────────────────────────────────────────
 
     const [direction, setDirection] = useState<Direction>('sui_to_evm')
     const [amount, setAmount] = useState('')
     const [recipient, setRecipient] = useState('')
+
+    // ─── Balance Fetching ──────────────────────────────────────────────────────
+
+    // SUI Balance
+    const { data: suiBalanceData } = useSuiClientQuery(
+        'getBalance',
+        { owner: suiAccount?.address || '' },
+        { enabled: !!suiAccount?.address, refetchInterval: 5000 }
+    );
+
+    const suiBalance = useMemo(() => {
+        if (!suiBalanceData) return '0.00'
+        // SUI has 9 decimals
+        const bal = parseFloat(formatUnits(BigInt(suiBalanceData.totalBalance), 9))
+        return bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    }, [suiBalanceData])
+
+    // EVM USDC Balance
+    const usdcBalance = useMemo(() => {
+        if (!createEvmIntent.balance) return '0.00'
+        // USDC has 6 decimals
+        const bal = parseFloat(formatUnits(createEvmIntent.balance, 6))
+        return bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    }, [createEvmIntent.balance])
+
+
+    // EVM Native ETH Balance
+    const { data: ethBalanceData } = useBalance({
+        address: evmAddress,
+    })
+
+    const ethBalance = useMemo(() => {
+        if (!ethBalanceData) return '0.00'
+        const bal = parseFloat(formatUnits(ethBalanceData.value, ethBalanceData.decimals))
+        return bal.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+    }, [ethBalanceData])
+
+    // Current Source Balance based on direction
+    const sourceBalance = direction === 'evm_to_sui' ? usdcBalance : suiBalance;
 
     // Pending Intent Data (to save to history on success)
     const pendingIntentRef = useRef<{ amount: string, recipient: string, sourceToken: string, destToken: string } | null>(null);
@@ -217,267 +263,294 @@ export function IntentBridge() {
     // ─── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <Card className="w-full max-w-[480px] mx-auto border-white/5 bg-[#0d111c] shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)] rounded-3xl overflow-hidden relative">
-            <CardContent className="p-4 space-y-1">
+        <div className="max-w-[480px] mx-auto space-y-4">
+            <Card className="w-full border-white/5 bg-[#0d111c] shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)] rounded-3xl overflow-hidden relative">
+                <CardContent className="p-4 space-y-1">
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-2 px-2">
-                    <div className="flex gap-4 text-sm font-medium text-white/50">
-                        <button className="text-white hover:opacity-80 transition-opacity">Swap</button>
-                        <button className="hover:text-white transition-colors">Limit</button>
-                        <button className="hover:text-white transition-colors">Send</button>
-                    </div>
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-2 px-2">
+                        <div className="flex gap-4 text-sm font-medium text-white/50">
+                            <button className="text-white hover:opacity-80 transition-opacity">Swap</button>
+                            <button className="hover:text-white transition-colors">Limit</button>
+                            <button className="hover:text-white transition-colors">Send</button>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                        <ActivityDrawer />
+                        <div className="flex items-center gap-2">
+                            <ActivityDrawer />
 
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button className="text-white/50 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5">
-                                    <Settings className="h-5 w-5" />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[300px] bg-[#131a2a] border-white/10 text-white p-4 rounded-xl shadow-xl backdrop-blur-3xl">
-                                <DropdownMenuLabel className="px-0 pb-3 text-sm font-semibold">Transaction Settings</DropdownMenuLabel>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button className="text-white/50 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5">
+                                        <Settings className="h-5 w-5" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-[300px] bg-[#131a2a] border-white/10 text-white p-4 rounded-xl shadow-xl backdrop-blur-3xl">
+                                    <DropdownMenuLabel className="px-0 pb-3 text-sm font-semibold">Transaction Settings</DropdownMenuLabel>
 
-                                <div className="space-y-4">
-                                    {/* Duration */}
-                                    <div>
-                                        <div className="flex justify-between mb-2">
-                                            <span className="text-xs text-white/50">Auction Duration</span>
+                                    <div className="space-y-4">
+                                        {/* Duration */}
+                                        <div>
+                                            <div className="flex justify-between mb-2">
+                                                <span className="text-xs text-white/50">Auction Duration</span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {DUATION_LABELS.map((label, i) => (
+                                                    <Button
+                                                        key={label}
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setDurationIdx(i)}
+                                                        className={`flex-1 h-8 rounded-full text-xs hover:bg-white/10 ${i === durationIdx ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-white/5 border border-transparent'}`}
+                                                    >
+                                                        {label}
+                                                    </Button>
+                                                ))}
+                                            </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            {DUATION_LABELS.map((label, i) => (
-                                                <Button
-                                                    key={label}
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setDurationIdx(i)}
-                                                    className={`flex-1 h-8 rounded-full text-xs hover:bg-white/10 ${i === durationIdx ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-white/5 border border-transparent'}`}
-                                                >
-                                                    {label}
-                                                </Button>
-                                            ))}
+
+                                        {/* Slippage */}
+                                        <div>
+                                            <div className="flex justify-between mb-2">
+                                                <span className="text-xs text-white/50">Max Slippage</span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {['0.5%', '1.0%', 'Auto'].map((label, i) => (
+                                                    <Button
+                                                        key={label}
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setSlippageIdx(i)}
+                                                        className={`flex-1 h-8 rounded-full text-xs hover:bg-white/10 ${i === slippageIdx ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-white/5 border border-transparent'}`}
+                                                    >
+                                                        {label}
+                                                    </Button>
+                                                ))}
+                                            </div>
                                         </div>
+
+                                        {/* Premium */}
+                                        <div>
+                                            <div className="flex justify-between mb-2">
+                                                <span className="text-xs text-white/50 flex items-center gap-1">
+                                                    Max Premium
+                                                    <Info className="h-3 w-3" />
+                                                </span>
+                                            </div>
+                                            <div className="relative">
+                                                <Input
+                                                    value={maxPremium}
+                                                    onChange={e => setMaxPremium(e.target.value)}
+                                                    className="h-9 bg-white/5 border-white/10 text-right pr-8 text-sm focus:border-indigo-500/50"
+                                                />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-white/50">%</span>
+                                            </div>
+                                        </div>
+
+                                        <DropdownMenuSeparator className="bg-white/10 my-3" />
+
+                                        {/* Recipient Toggle */}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-white/60">Use Connected Wallet</span>
+                                            <div
+                                                onClick={() => setUseWalletAddress(!useWalletAddress)}
+                                                className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${useWalletAddress ? 'bg-emerald-500/20' : 'bg-white/10'}`}
+                                            >
+                                                <div className={`absolute top-1 w-3 h-3 rounded-full bg-current transition-all ${useWalletAddress ? 'left-6 text-emerald-400' : 'left-1 text-white/30'}`} />
+                                            </div>
+                                        </div>
+
                                     </div>
-
-                                    {/* Slippage */}
-                                    <div>
-                                        <div className="flex justify-between mb-2">
-                                            <span className="text-xs text-white/50">Max Slippage</span>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            {['0.5%', '1.0%', 'Auto'].map((label, i) => (
-                                                <Button
-                                                    key={label}
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setSlippageIdx(i)}
-                                                    className={`flex-1 h-8 rounded-full text-xs hover:bg-white/10 ${i === slippageIdx ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-white/5 border border-transparent'}`}
-                                                >
-                                                    {label}
-                                                </Button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Premium */}
-                                    <div>
-                                        <div className="flex justify-between mb-2">
-                                            <span className="text-xs text-white/50 flex items-center gap-1">
-                                                Max Premium
-                                                <Info className="h-3 w-3" />
-                                            </span>
-                                        </div>
-                                        <div className="relative">
-                                            <Input
-                                                value={maxPremium}
-                                                onChange={e => setMaxPremium(e.target.value)}
-                                                className="h-9 bg-white/5 border-white/10 text-right pr-8 text-sm focus:border-indigo-500/50"
-                                            />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-white/50">%</span>
-                                        </div>
-                                    </div>
-
-                                    <DropdownMenuSeparator className="bg-white/10 my-3" />
-
-                                    {/* Recipient Toggle */}
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs text-white/60">Use Connected Wallet</span>
-                                        <div
-                                            onClick={() => setUseWalletAddress(!useWalletAddress)}
-                                            className={`w-10 h-5 rounded-full relative cursor-pointer transition-colors ${useWalletAddress ? 'bg-emerald-500/20' : 'bg-white/10'}`}
-                                        >
-                                            <div className={`absolute top-1 w-3 h-3 rounded-full bg-current transition-all ${useWalletAddress ? 'left-6 text-emerald-400' : 'left-1 text-white/30'}`} />
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </div>
-
-                {/* ─── You Pay ─────────────────────────────────────────────────── */}
-                <div className="bg-[#131a2a] rounded-2xl p-4 hover:border-white/5 border border-transparent transition-colors">
-                    <div className="flex justify-between mb-3 text-sm text-white/40 font-medium">
-                        <span>You Pay</span>
-                        <span>Balance: {sourceToken === 'USDC' ? '12,340.00' : '530.22'}</span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <input
-                            type="number"
-                            placeholder="0"
-                            value={amount}
-                            onChange={e => setAmount(e.target.value)}
-                            className="w-full bg-transparent text-4xl font-medium text-white placeholder-white/20 outline-none"
-                            style={{ appearance: 'none' }}
-                        />
-
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 shrink-0 ${sourceToken === 'SUI' ? 'bg-indigo-500/10' : 'bg-cyan-500/10'}`}>
-                            <div className={`w-6 h-6 rounded-full ${sourceToken === 'SUI' ? 'bg-indigo-500' : 'bg-cyan-500'}`} />
-                            <span className="text-lg font-semibold text-white">{sourceToken}</span>
-                            <ChevronDown className="h-4 w-4 text-white/50" />
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
 
-                    <div className="flex justify-between mt-2">
-                        <span className="text-xs text-white/30">≈ ${((parseFloat(amount) || 0) * PRICES[sourceToken]).toFixed(2)}</span>
-                    </div>
-                </div>
-
-                {/* ─── Separator ───────────────────────────────────────────────── */}
-                <div className="relative h-2 z-10">
-                    <div className="absolute left-1/2 -top-5 -translate-x-1/2">
-                        <div className="bg-[#0d111c] p-1.5 rounded-xl">
-                            <button
-                                onClick={toggleDirection}
-                                className="bg-[#242b3b] p-2 rounded-xl border-[3px] border-[#0d111c] hover:scale-105 active:scale-95 transition-all group"
-                            >
-                                <ArrowDown className="h-4 w-4 text-white/60 group-hover:text-white" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* ─── You Receive ─────────────────────────────────────────────── */}
-                <div className="bg-[#131a2a] rounded-2xl p-4 border border-transparent transition-colors">
-                    <div className="flex justify-between mb-3 text-sm text-white/40 font-medium">
-                        <span>You Receive</span>
-                        <span>Balance: 0.00</span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <input
-                            readOnly
-                            placeholder="0"
-                            value={marketOutput}
-                            className={`w-full bg-transparent text-4xl font-medium placeholder-white/20 outline-none cursor-default ${isQuoteLoading ? 'text-white/30 animate-pulse' : 'text-white/60'}`}
-                        />
-
-                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-default border border-transparent shrink-0 ${destToken === 'SUI' ? 'bg-indigo-500/10' : 'bg-white/5'}`}>
-                            <div className={`w-6 h-6 rounded-full ${destToken === 'SUI' ? 'bg-indigo-500' : 'bg-slate-200'}`} />
-                            <span className="text-lg font-semibold text-white">{destToken}</span>
-                        </div>
-                    </div>
-                    <div className="flex justify-between mt-2">
-                        <span className="text-xs text-white/30">
-                            {marketOutput ? `≈ $${((parseFloat(marketOutput) || 0) * PRICES[destToken]).toFixed(2)}` : '$0.00'}
-                            <span className="ml-1 text-emerald-400">(-0.05%)</span>
-                        </span>
-                    </div>
-                </div>
-
-                {/* ─── Manual Address ──────────────────────────────────────────── */}
-                <AnimatePresence>
-                    {!useWalletAddress && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="bg-[#131a2a] rounded-xl p-3 mt-1 flex items-center gap-3 border border-amber-500/20">
-                                <Wallet className="h-4 w-4 text-amber-500/50" />
-                                <input
-                                    value={recipient}
-                                    onChange={e => setRecipient(e.target.value)}
-                                    placeholder={`Enter ${destToken} recipient address...`}
-                                    className="bg-transparent text-sm w-full outline-none text-amber-100 placeholder-amber-500/30"
-                                />
+                    {/* ─── You Pay ─────────────────────────────────────────────────── */}
+                    <div className="bg-[#131a2a] rounded-2xl p-4 hover:border-white/5 border border-transparent transition-colors">
+                        <div className="flex justify-between mb-3 text-sm text-white/40 font-medium">
+                            <span>You Pay</span>
+                            <div className="flex items-center gap-2">
+                                <span>Balance: {sourceBalance}</span>
                             </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* ─── CTA ─────────────────────────────────────────────────────── */}
-
-                <div className="pt-2">
-                    {!isConnected ? (
-                        <Button
-                            fullWidth
-                            size="lg"
-                            className="bg-[#2a3040] text-indigo-300 font-semibold h-14 rounded-2xl hover:bg-[#343b4f]"
-                        >
-                            Connect Wallet
-                        </Button>
-                    ) : needsApproval ? (
-                        <Button
-                            fullWidth
-                            size="lg"
-                            onClick={handleApprove}
-                            disabled={isPending}
-                            className="bg-amber-500/10 text-amber-500 border border-amber-500/50 font-bold text-lg h-14 rounded-2xl hover:bg-amber-500/20 transition-all"
-                        >
-                            {createEvmIntent.isApproving ? (
-                                <div className="flex items-center gap-2">
-                                    <Loader2 className="h-5 w-5 animate-spin" />
-                                    Approving USDC...
-                                </div>
-                            ) : (
-                                'Approve USDC'
-                            )}
-                        </Button>
-                    ) : (
-                        <Button
-                            fullWidth
-                            size="lg"
-                            onClick={handleSubmit}
-                            disabled={isPending || !amount || !marketOutput}
-                            className="bg-gradient-to-r from-indigo-500 to-purple-600 font-bold text-lg h-14 rounded-2xl hover:opacity-90 shadow-lg shadow-indigo-500/20 transition-all"
-                        >
-                            {isPending ? (
-                                <div className="flex items-center gap-2">
-                                    <Loader2 className="h-5 w-5 animate-spin" />
-                                    Sign Transaction
-                                </div>
-                            ) : (
-                                `Review Order`
-                            )}
-                        </Button>
-                    )}
-                </div>
-
-                {/* Quote Info */}
-                {marketOutput && (
-                    <div className="mt-4 px-2 space-y-1">
-                        <div className="flex justify-between text-xs font-medium text-white/30">
-                            <span>Rate</span>
-                            <span>1 {sourceToken} = {(PRICES[sourceToken] / PRICES[destToken]).toFixed(4)} {destToken}</span>
                         </div>
-                        <div className="flex justify-between text-xs font-medium text-white/30">
-                            <span>Estimated Gas</span>
-                            <span className="text-emerald-400">~$0.42</span>
+
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="number"
+                                placeholder="0"
+                                value={amount}
+                                onChange={e => setAmount(e.target.value)}
+                                className="w-full bg-transparent text-4xl font-medium text-white placeholder-white/20 outline-none"
+                                style={{ appearance: 'none' }}
+                            />
+
+                            <div className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer hover:bg-white/5 transition-colors border border-transparent hover:border-white/10 shrink-0 ${sourceToken === 'SUI' ? 'bg-indigo-500/10' : 'bg-cyan-500/10'}`}>
+                                <div className="relative">
+                                    <div className={`w-6 h-6 rounded-full ${sourceToken === 'SUI' ? 'bg-indigo-500' : 'bg-cyan-500'}`} />
+                                    <ChainBadge chain={direction === 'sui_to_evm' ? 'SUI' : 'BASE'} />
+                                </div>
+                                <span className="text-lg font-semibold text-white">{sourceToken}</span>
+                                <ChevronDown className="h-4 w-4 text-white/50" />
+                            </div>
                         </div>
-                        <div className="flex justify-between text-xs font-medium text-white/30">
-                            <span>Start Bid (Premium)</span>
-                            <span className="text-indigo-400">{startAmount} {destToken}</span>
+
+                        <div className="flex justify-between mt-2">
+                            <span className="text-xs text-white/30">≈ ${((parseFloat(amount) || 0) * PRICES[sourceToken]).toFixed(2)}</span>
                         </div>
                     </div>
-                )}
 
-            </CardContent>
-        </Card>
+                    {/* ─── Separator ───────────────────────────────────────────────── */}
+                    <div className="relative h-2 z-10">
+                        <div className="absolute left-1/2 -top-5 -translate-x-1/2">
+                            <div className="bg-[#0d111c] p-1.5 rounded-xl">
+                                <button
+                                    onClick={toggleDirection}
+                                    className="bg-[#242b3b] p-2 rounded-xl border-[3px] border-[#0d111c] hover:scale-105 active:scale-95 transition-all group"
+                                >
+                                    <ArrowDown className="h-4 w-4 text-white/60 group-hover:text-white" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ─── You Receive ─────────────────────────────────────────────── */}
+                    <div className="bg-[#131a2a] rounded-2xl p-4 border border-transparent transition-colors">
+                        <div className="flex justify-between mb-3 text-sm text-white/40 font-medium">
+                            <span>You Receive</span>
+                            {/* Destination balance could be fetched but usually less critical for "You Receive" input context unless it's a swap to existing. 
+                            For now, keep simple or use opposite balance if connected. */}
+                            <span>Balance: {direction === 'evm_to_sui' ? suiBalance : ethBalance}</span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <input
+                                readOnly
+                                placeholder="0"
+                                value={marketOutput}
+                                className={`w-full bg-transparent text-4xl font-medium placeholder-white/20 outline-none cursor-default ${isQuoteLoading ? 'text-white/30 animate-pulse' : 'text-white/60'}`}
+                            />
+
+                            <div className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full cursor-default border border-transparent shrink-0 ${destToken === 'SUI' ? 'bg-indigo-500/10' : 'bg-white/5'}`}>
+                                <div className="relative">
+                                    <div className={`w-6 h-6 rounded-full ${destToken === 'SUI' ? 'bg-indigo-500' : 'bg-slate-200'}`} />
+                                    <ChainBadge chain={direction === 'evm_to_sui' ? 'SUI' : 'BASE'} />
+                                </div>
+                                <span className="text-lg font-semibold text-white">{destToken}</span>
+                            </div>
+                        </div>
+                        <div className="flex justify-between mt-2">
+                            <span className="text-xs text-white/30">
+                                {marketOutput ? `≈ $${((parseFloat(marketOutput) || 0) * PRICES[destToken]).toFixed(2)}` : '$0.00'}
+                                <span className="ml-1 text-emerald-400">(-0.05%)</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* ─── Manual Address ──────────────────────────────────────────── */}
+                    <AnimatePresence>
+                        {!useWalletAddress && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="bg-[#131a2a] rounded-xl p-3 mt-1 flex items-center gap-3 border border-amber-500/20">
+                                    <Wallet className="h-4 w-4 text-amber-500/50" />
+                                    <input
+                                        value={recipient}
+                                        onChange={e => setRecipient(e.target.value)}
+                                        placeholder={`Enter ${destToken} recipient address...`}
+                                        className="bg-transparent text-sm w-full outline-none text-amber-100 placeholder-amber-500/30"
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* ─── CTA ─────────────────────────────────────────────────────── */}
+
+                    <div className="pt-2">
+                        {!isConnected ? (
+                            <Button
+                                fullWidth
+                                size="lg"
+                                className="bg-[#2a3040] text-indigo-300 font-semibold h-14 rounded-2xl hover:bg-[#343b4f]"
+                            >
+                                Connect Wallet
+                            </Button>
+                        ) : needsApproval ? (
+                            <Button
+                                fullWidth
+                                size="lg"
+                                onClick={handleApprove}
+                                disabled={isPending}
+                                className="bg-amber-500/10 text-amber-500 border border-amber-500/50 font-bold text-lg h-14 rounded-2xl hover:bg-amber-500/20 transition-all"
+                            >
+                                {createEvmIntent.isApproving ? (
+                                    <div className="flex items-center gap-2">
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        Approving USDC...
+                                    </div>
+                                ) : (
+                                    'Approve USDC'
+                                )}
+                            </Button>
+                        ) : (
+                            <Button
+                                fullWidth
+                                size="lg"
+                                onClick={handleSubmit}
+                                disabled={isPending || !amount || !marketOutput}
+                                className="bg-gradient-to-r from-indigo-500 to-purple-600 font-bold text-lg h-14 rounded-2xl hover:opacity-90 shadow-lg shadow-indigo-500/20 transition-all"
+                            >
+                                {isPending ? (
+                                    <div className="flex items-center gap-2">
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        Sign Transaction
+                                    </div>
+                                ) : (
+                                    `Review Order`
+                                )}
+                            </Button>
+                        )}
+                    </div>
+
+                    {/* Quote Info */}
+                    {marketOutput && (
+                        <div className="mt-4 px-2 space-y-1">
+                            <div className="flex justify-between text-xs font-medium text-white/30">
+                                <span>Rate</span>
+                                <span>1 {sourceToken} = {(PRICES[sourceToken] / PRICES[destToken]).toFixed(4)} {destToken}</span>
+                            </div>
+                            <div className="flex justify-between text-xs font-medium text-white/30">
+                                <span>Estimated Gas</span>
+                                <span className="text-emerald-400">~$0.42</span>
+                            </div>
+                            <div className="flex justify-between text-xs font-medium text-white/30">
+                                <span>Start Bid (Premium)</span>
+                                <span className="text-indigo-400">{startAmount} {destToken}</span>
+                            </div>
+                        </div>
+                    )}
+
+                </CardContent>
+            </Card>
+
+            {/* Dev Tools: Link to Circle Faucet */}
+            {direction === 'evm_to_sui' && isConnected && (
+                <div className="flex justify-center text-xs text-white/30 gap-1">
+                    <span>Need testnet USDC?</span>
+                    <a
+                        href="https://faucet.circle.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-indigo-400 hover:text-indigo-300 transition-colors underline"
+                    >
+                        Get from Circle Faucet
+                    </a>
+                </div>
+            )}
+        </div>
     )
 }
