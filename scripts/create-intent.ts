@@ -5,7 +5,7 @@ import { fromB64 } from "@mysten/sui/utils";
 import { ethers } from "ethers";
 import * as dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ path: "../.env" });
 
 const SUI_RPC = process.env.SUI_RPC || getFullnodeUrl("testnet");
 const SUI_PACKAGE_ID = process.env.SUI_PACKAGE_ID || "";

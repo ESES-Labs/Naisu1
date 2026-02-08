@@ -11,7 +11,7 @@ import sui from "@wormhole-foundation/sdk/sui";
 import dotenv from 'dotenv';
 import axios from 'axios';
 
-dotenv.config();
+dotenv.config({ path: "../.env" });
 
 // ================= CONSTANTS & CONFIG =================
 

@@ -3,7 +3,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 import * as dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: "../.env" });
 
 const PRIVATE_KEY_EVM = process.env.PRIVATE_KEY_EVM || "";
 const EVM_VAULT_ADDRESS = process.env.EVM_INTENT_VAULT_ADDRESS || "";
