@@ -68,8 +68,7 @@ function isArithmeticOverflowError(error: unknown): boolean {
   const message = extractErrorMessage(error).toLowerCase()
   const isSwapQuoteError = message.includes('getswapquote')
   return (
-    isSwapQuoteError &&
-    message.includes('overflow') ||
+    (isSwapQuoteError && message.includes('overflow')) ||
     (isSwapQuoteError && message.includes('underflow')) ||
     (isSwapQuoteError && message.includes('arithmetic operation resulted in underflow or overflow'))
   )
@@ -547,8 +546,7 @@ export async function quoteSwap(
       ;[amountOut] = await swap.read.getSwapQuote([tokenIn, tokenOut, amountIn])
     } catch (quoteError) {
       // Use fallback when contract quote fails: overflow, or pool not init (e.g. contract DEFAULT_FEE differs from initialized pool).
-      const useFallback =
-        isArithmeticOverflowError(quoteError) || isPoolMissingError(quoteError)
+      const useFallback = isArithmeticOverflowError(quoteError) || isPoolMissingError(quoteError)
       if (!useFallback) {
         throw quoteError
       }
