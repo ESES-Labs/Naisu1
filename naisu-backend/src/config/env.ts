@@ -70,10 +70,7 @@ const envSchema = z.object({
     .default('true'),
 
   // Redis (optional, for caching)
-  REDIS_URL: z.preprocess(
-    (val) => (val === '' ? undefined : val),
-    z.string().url().optional()
-  ),
+  REDIS_URL: z.preprocess((val) => (val === '' ? undefined : val), z.string().url().optional()),
 
   // Security
   API_KEY_HEADER: z.string().default('x-api-key'),
