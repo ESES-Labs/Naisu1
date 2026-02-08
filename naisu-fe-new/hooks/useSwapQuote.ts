@@ -4,9 +4,21 @@
  */
 import { useState, useEffect, useRef } from 'react';
 
-const API_BASE =
-  import.meta.env.VITE_API_URL ??
-  (import.meta.env.DEV ? 'http://localhost:3000/api/v1' : 'https://dev-api.naisu.one/api/v1');
+function resolveApiBase() {
+  const configured = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  const fallback = import.meta.env.DEV
+    ? 'http://localhost:3000/api/v1'
+    : 'https://dev-api.naisu.one/api/v1';
+  const base = (configured && configured.length > 0 ? configured : fallback).replace(/\/$/, '');
+
+  // Prevent mixed-content failures when site is served over HTTPS.
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:' && base.startsWith('http://')) {
+    return `https://${base.slice('http://'.length)}`;
+  }
+  return base;
+}
+
+const API_BASE = resolveApiBase();
 const DEBOUNCE_MS = 400;
 
 /** Matches backend GET /uniswap-v4/swap/quote response (amounts in raw units) */
