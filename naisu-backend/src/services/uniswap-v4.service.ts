@@ -119,27 +119,42 @@ async function readPoolSlot0(
   poolManager: Awaited<ReturnType<typeof getCanonicalPoolManagerContract>>,
   poolId: `0x${string}`
 ): Promise<{ sqrtPriceX96: bigint; tick: number; protocolFee: number; swapFee: number }> {
-  const stateSlot = getPoolStateSlot(poolId)
-  const dataHex = (await poolManager.read.extsload([stateSlot])) as `0x${string}`
-  const data = BigInt(dataHex)
+  try {
+    const [sqrtPriceX96, tick, protocolFee, swapFee] = await poolManager.read.getSlot0([poolId])
+    return {
+      sqrtPriceX96: BigInt(sqrtPriceX96),
+      tick: Number(tick),
+      protocolFee: Number(protocolFee),
+      swapFee: Number(swapFee),
+    }
+  } catch (_error) {
+    // Fallback to raw storage decode for PoolManager variants that don't expose helpers.
+    const stateSlot = getPoolStateSlot(poolId)
+    const dataHex = (await poolManager.read.extsload([stateSlot])) as `0x${string}`
+    const data = BigInt(dataHex)
 
-  const sqrtPriceX96 = data & ((1n << 160n) - 1n)
-  const tick = parseSignedInt24(data >> 160n)
-  const protocolFee = Number((data >> 184n) & 0xffffffn)
-  const swapFee = Number((data >> 208n) & 0xffffffn)
+    const sqrtPriceX96 = data & ((1n << 160n) - 1n)
+    const tick = parseSignedInt24(data >> 160n)
+    const protocolFee = Number((data >> 184n) & 0xffffffn)
+    const swapFee = Number((data >> 208n) & 0xffffffn)
 
-  return { sqrtPriceX96, tick, protocolFee, swapFee }
+    return { sqrtPriceX96, tick, protocolFee, swapFee }
+  }
 }
 
 async function readPoolLiquidity(
   poolManager: Awaited<ReturnType<typeof getCanonicalPoolManagerContract>>,
   poolId: `0x${string}`
 ): Promise<bigint> {
-  const stateSlot = BigInt(getPoolStateSlot(poolId))
-  const liquiditySlot = toHex(stateSlot + LIQUIDITY_OFFSET, { size: 32 })
-  const dataHex = (await poolManager.read.extsload([liquiditySlot])) as `0x${string}`
-  const data = BigInt(dataHex)
-  return data & ((1n << 128n) - 1n)
+  try {
+    return (await poolManager.read.getLiquidity([poolId])) as bigint
+  } catch (_error) {
+    const stateSlot = BigInt(getPoolStateSlot(poolId))
+    const liquiditySlot = toHex(stateSlot + LIQUIDITY_OFFSET, { size: 32 })
+    const dataHex = (await poolManager.read.extsload([liquiditySlot])) as `0x${string}`
+    const data = BigInt(dataHex)
+    return data & ((1n << 128n) - 1n)
+  }
 }
 
 // ============================================================================
