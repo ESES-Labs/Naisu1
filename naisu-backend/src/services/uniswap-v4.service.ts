@@ -68,8 +68,7 @@ function isArithmeticOverflowError(error: unknown): boolean {
   const message = extractErrorMessage(error).toLowerCase()
   const isSwapQuoteError = message.includes('getswapquote')
   return (
-    isSwapQuoteError &&
-    message.includes('overflow') ||
+    (isSwapQuoteError && message.includes('overflow')) ||
     (isSwapQuoteError && message.includes('underflow')) ||
     (isSwapQuoteError && message.includes('arithmetic operation resulted in underflow or overflow'))
   )
@@ -127,7 +126,7 @@ async function readPoolSlot0(
       protocolFee: Number(protocolFee),
       swapFee: Number(swapFee),
     }
-  } catch (_error) {
+  } catch {
     // Fallback to raw storage decode for PoolManager variants that don't expose helpers.
     const stateSlot = getPoolStateSlot(poolId)
     const dataHex = (await poolManager.read.extsload([stateSlot])) as `0x${string}`
@@ -148,7 +147,7 @@ async function readPoolLiquidity(
 ): Promise<bigint> {
   try {
     return (await poolManager.read.getLiquidity([poolId])) as bigint
-  } catch (_error) {
+  } catch {
     const stateSlot = BigInt(getPoolStateSlot(poolId))
     const liquiditySlot = toHex(stateSlot + LIQUIDITY_OFFSET, { size: 32 })
     const dataHex = (await poolManager.read.extsload([liquiditySlot])) as `0x${string}`
@@ -547,8 +546,7 @@ export async function quoteSwap(
       ;[amountOut] = await swap.read.getSwapQuote([tokenIn, tokenOut, amountIn])
     } catch (quoteError) {
       // Use fallback when contract quote fails: overflow, or pool not init (e.g. contract DEFAULT_FEE differs from initialized pool).
-      const useFallback =
-        isArithmeticOverflowError(quoteError) || isPoolMissingError(quoteError)
+      const useFallback = isArithmeticOverflowError(quoteError) || isPoolMissingError(quoteError)
       if (!useFallback) {
         throw quoteError
       }
@@ -814,6 +812,7 @@ export async function buildSwapTransaction(params: {
     tokenOut,
     amountIn,
     minAmountOut,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     fee = DEFAULT_FEE,
     deadlineSeconds = 3600,
   } = params

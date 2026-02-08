@@ -1,0 +1,65 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+bun.lockb
+
+# Build output
+dist
+build
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Drizzle
+drizzle/migrations/*
+!drizzle/migrations/.gitkeep
+drizzle/meta
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.docker
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Misc
+README.md
+CHANGELOG.md
+.eslintrc*
+.prettierrc*
+jest.config.*
+tsconfig.tsbuildinfo

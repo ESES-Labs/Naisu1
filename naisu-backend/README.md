@@ -71,8 +71,9 @@ bun run dev
 #### Positions
 - `GET /api/v1/uniswap-v4/position?owner=0x...&token0=0x...&token1=0x...&tickLower=...&tickUpper=...` - Get user position
 
-#### Swap Quotes
+#### Swap
 - `GET /api/v1/uniswap-v4/swap/quote?tokenIn=0x...&tokenOut=0x...&amountIn=...` - Quote a swap
+- `POST /api/v1/uniswap-v4/swap/build` - Build unsigned swap transaction(s) for user to sign
 
 #### Solver Management
 - `GET /api/v1/uniswap-v4/solver/check?address=0x...` - Check if address is authorized solver
@@ -88,15 +89,15 @@ bun run dev
 
 | Contract | Address |
 |----------|---------|
-| NaisuUniswapV4Swap | `0xe98c6a81ef37b14e9123b803baf08ff99098b088` |
-| NaisuUniswapV4Rewards | `0x2c5c7eb00608f910d171c7d7a841338298076a96` |
+| NaisuUniswapV4Swap | `0xfaBD3bdeecf7f858d6cef1c137694e19Ac7187f6` |
+| NaisuUniswapV4Rewards | `0xD24463BBde91Df1937F4CFC4F627fFc76728b8A6` |
 | PoolManager | `0x05E73354cFDd6745C338b50BcFDfA3Aa6fA03408` |
 
 ### Example Requests
 
 #### Get Pool Price
 ```bash
-curl "http://localhost:8080/api/v1/uniswap-v4/pool/price?token0=0x...&token1=0x..."
+curl "http://localhost:3000/api/v1/uniswap-v4/pool/price?token0=0x...&token1=0x..."
 ```
 
 Response:
@@ -113,7 +114,7 @@ Response:
 
 #### Get Pool State
 ```bash
-curl "http://localhost:8080/api/v1/uniswap-v4/pool/state?token0=0x...&token1=0x..."
+curl "http://localhost:3000/api/v1/uniswap-v4/pool/state?token0=0x036CbD53842c5426634e7929541eC2318f3dCF7e&token1=0x4200000000000000000000000000000000000006"
 ```
 
 Response:
@@ -134,7 +135,7 @@ Response:
 
 #### Batch Pool Queries
 ```bash
-curl -X POST "http://localhost:8080/api/v1/uniswap-v4/pools/batch" \
+curl -X POST "http://localhost:3000/api/v1/uniswap-v4/pools/batch" \
   -H "Content-Type: application/json" \
   -d '{
     "pools": [
@@ -146,7 +147,7 @@ curl -X POST "http://localhost:8080/api/v1/uniswap-v4/pools/batch" \
 
 #### Quote Swap
 ```bash
-curl "http://localhost:8080/api/v1/uniswap-v4/swap/quote?tokenIn=0x...&tokenOut=0x...&amountIn=1000000000000000000"
+curl "http://localhost:3000/api/v1/uniswap-v4/swap/quote?tokenIn=0x036CbD53842c5426634e7929541eC2318f3dCF7e&tokenOut=0x4200000000000000000000000000000000000006&amountIn=1000000000000000000"
 ```
 
 Response:
@@ -161,12 +162,101 @@ Response:
 }
 ```
 
+#### Build Swap Transaction
+```bash
+curl -X POST "http://localhost:3000/api/v1/uniswap-v4/swap/build" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sender": "0xYourWalletAddress...",
+    "tokenIn": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "tokenOut": "0x4200000000000000000000000000000000000006",
+    "amountIn": "1000000",
+    "minAmountOut": "0",
+    "deadlineSeconds": 3600
+  }'
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "transactions": [
+      {
+        "to": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        "data": "0x095ea7b3...",
+        "value": "0",
+        "chainId": 84532,
+        "description": "Approve NaisuSwap contract to spend 0x036..."
+      },
+      {
+        "to": "0xfaBD3bdeecf7f858d6cef1c137694e19Ac7187f6",
+        "data": "0x1a461cb2...",
+        "value": "0",
+        "chainId": 84532,
+        "description": "Swap 1000000 of 0x036... for 0x420..."
+      }
+    ],
+    "summary": {
+      "tokenIn": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      "tokenOut": "0x4200000000000000000000000000000000000006",
+      "amountIn": "1000000",
+      "minAmountOut": "0",
+      "deadline": "1738972800",
+      "swapContract": "0xfaBD3bdeecf7f858d6cef1c137694e19Ac7187f6",
+      "needsApproval": true
+    }
+  }
+}
+```
+
+#### Executing the build response (user signs & sends)
+
+The API returns **unsigned** transactions. The client must sign and send each one in order.
+
+**Option A – React (wagmi)**  
+Use the frontend hook so the user signs with their connected wallet:
+
+```ts
+import { useExecuteSwapBuild } from '@/features/uniswap_v4';
+
+// After you have the build response (e.g. from fetch or from buildAndExecute):
+const { execute, buildAndExecute, isExecuting } = useExecuteSwapBuild();
+
+// 1) You already have the build JSON:
+const hashes = await execute(buildResponse);
+
+// 2) Or build and execute in one step (build API + sign/send):
+const hashes = await buildAndExecute({
+  sender: address!,
+  tokenIn: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+  tokenOut: '0x4200000000000000000000000000000000000006',
+  amountIn: '1000000',
+  minAmountOut: '0',
+});
+```
+
+**Option B – Node / script (viem)**  
+Send each `data.transactions[]` item with your wallet client:
+
+```ts
+for (const tx of data.transactions) {
+  const hash = await walletClient.sendTransaction({
+    to: tx.to as `0x${string}`,
+    data: tx.data as `0x${string}`,
+    value: BigInt(tx.value),
+    chainId: tx.chainId,
+  });
+  await publicClient.waitForTransactionReceipt({ hash });
+}
+```
+
 ## 🔐 Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NODE_ENV` | Environment mode | `development` |
-| `PORT` | Server port | `8080` |
+| `PORT` | Server port | `3000` |
 | `DATABASE_URL` | PostgreSQL connection string (optional) | - |
 | `CORS_ORIGIN` | Allowed CORS origins | `*` |
 | `LOG_LEVEL` | Logging level | `info` |

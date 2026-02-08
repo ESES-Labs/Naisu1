@@ -21,4 +21,3 @@ docsRouter.get(
     url: '/docs/openapi.json',
   })
 )
-  

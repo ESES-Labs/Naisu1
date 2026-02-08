@@ -37,7 +37,11 @@ uniswapV4Router.get('/pool/price', zValidator('query', poolPriceQuerySchema), as
 
   logger.info({ token0, token1 }, 'Fetching pool price')
 
-  const price = await uniswapV4Service.getPoolPrice(token0 as `0x${string}`, token1 as `0x${string}`, fee)
+  const price = await uniswapV4Service.getPoolPrice(
+    token0 as `0x${string}`,
+    token1 as `0x${string}`,
+    fee
+  )
 
   return c.json({
     success: true,
@@ -58,7 +62,11 @@ uniswapV4Router.get('/pool/state', zValidator('query', poolStateQuerySchema), as
 
   logger.info({ token0, token1 }, 'Fetching pool state')
 
-  const state = await uniswapV4Service.getPoolState(token0 as `0x${string}`, token1 as `0x${string}`, fee)
+  const state = await uniswapV4Service.getPoolState(
+    token0 as `0x${string}`,
+    token1 as `0x${string}`,
+    fee
+  )
 
   return c.json({
     success: true,

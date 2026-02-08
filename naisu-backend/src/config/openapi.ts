@@ -5,16 +5,13 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import {
   poolQuerySchema,
-  positionQuerySchema,
   swapQuoteSchema,
   solverCheckSchema,
-  batchPoolQuerySchema,
   poolPriceResponseSchema,
   poolStateResponseSchema,
   swapQuoteResponseSchema,
   solverCheckResponseSchema,
   contractAddressesResponseSchema,
-  healthResponseSchema,
   errorResponseSchema,
 } from '@models/uniswap-v4.model'
 
